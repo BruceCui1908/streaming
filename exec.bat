@@ -1,1 +1,0 @@
-docker exec -it media /bin/bash
