@@ -22,7 +22,6 @@ public:
   server(server &&) = delete;
   server &operator=(server &&) = delete;
 
-  virtual void start() = 0;
   virtual const std::string info() = 0;
 
 protected:

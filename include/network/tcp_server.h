@@ -1,8 +1,11 @@
 #pragma once
 
 #include "server.h"
+#include "session.h"
 
 #include <boost/asio.hpp>
+
+#include <type_traits>
 
 namespace network {
 
@@ -17,9 +20,9 @@ public:
 
   const std::string info() override;
 
-  void start() override {
-    start_signal_listener();
-
+  template <typename Session,
+            typename = std::enable_if_t<std::is_base_of_v<session, Session>>>
+  void start() {
     do_accept();
   }
 

@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 
 #include "network/tcp_server.h"
+#include "protocol/rtmp/rtmp_session.h"
 
 int main() {
 #ifdef DEBUG
@@ -9,10 +10,10 @@ int main() {
 #endif
 
   boost::asio::io_context io_context;
+  auto server = network::tcp_server::create(io_context, 1935);
 
   try {
-    auto server = network::tcp_server::create(io_context, 8080);
-    server->start();
+    server->start<rtmp::rtmp_session>();
   } catch (std::exception &ex) {
     spdlog::error("Failed to initialize servers, error = {}", ex.what());
     return EXIT_FAILURE;

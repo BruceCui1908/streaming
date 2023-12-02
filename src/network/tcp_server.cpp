@@ -23,6 +23,7 @@ tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port,
   // register ctrl-c and kill
   signals_.add(SIGINT);
   signals_.add(SIGTERM);
+  start_signal_listener();
 
   tcp::resolver resolver(io_context);
   auto result = resolver.resolve(ipType == ip_type::ipv4 ? DEFAULT_LOCAL_IPV4
