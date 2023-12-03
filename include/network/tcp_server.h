@@ -5,6 +5,7 @@
 
 #include <boost/asio.hpp>
 
+#include <functional>
 #include <type_traits>
 
 namespace network {
@@ -20,9 +21,18 @@ public:
 
   const std::string info() override;
 
-  template <typename Session,
-            typename = std::enable_if_t<std::is_base_of_v<session, Session>>>
+  template <
+      typename SessionProtocol,
+      typename = std::enable_if_t<std::is_base_of_v<session, SessionProtocol>>>
   void start() {
+    session_alloc_ = [this](boost::asio::ip::tcp::socket sock) {
+      auto session_ptr = SessionProtocol::create(
+          std::move(sock), session_manager_->generate_session_prefix());
+      session_manager_->add(session_ptr);
+      spdlog::debug("{} created!", session_ptr->id());
+      return session_ptr;
+    };
+
     do_accept();
   }
 
@@ -40,6 +50,13 @@ private:
 
   /// Acceptor used to listen for incoming connections.
   tcp::acceptor acceptor_;
+
+  // socket fd of this tcp server
+  int raw_fd_{-1};
+
+  session_manager::ptr session_manager_;
+
+  std::function<session::ptr(boost::asio::ip::tcp::socket)> session_alloc_;
 };
 
 } // namespace network

@@ -3,8 +3,6 @@
 #include <csignal>
 #include <stdexcept>
 
-#include <spdlog/spdlog.h>
-
 namespace network {
 
 #define DEFAULT_LOCAL_IPV4 "0.0.0.0"
@@ -40,6 +38,10 @@ tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port,
   acceptor_.bind(endpoint);
   acceptor_.listen();
 
+  raw_fd_ = acceptor_.native_handle();
+
+  session_manager_ = session_manager::create(info());
+
   spdlog::info("Successfully created {}", info());
 }
 
@@ -54,7 +56,10 @@ void tcp_server::do_accept() {
         }
 
         if (!ec) {
-          spdlog::info("received connection");
+          auto new_session = session_alloc_(std::move(socket));
+        } else {
+          spdlog::error("acceptor received error {}, msg = {}", ec.value(),
+                        ec.message());
         }
 
         do_accept();
@@ -62,7 +67,8 @@ void tcp_server::do_accept() {
 }
 
 const std::string tcp_server::info() {
-  return fmt::format("TCP server {}|{}", port_, ip_type_);
+  return fmt::format("TCP server {}|{}|{}", port_,
+                     ip_type_ == ip_type::ipv4 ? "ipv4" : "ipv6", raw_fd_);
 }
 
 void tcp_server::start_signal_listener() {

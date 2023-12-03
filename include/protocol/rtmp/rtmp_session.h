@@ -7,10 +7,10 @@ class rtmp_session : public network::session {
 public:
   using ptr = std::shared_ptr<rtmp_session>;
 
-  static ptr create(boost::asio::ip::tcp::socket);
+  static ptr create(boost::asio::ip::tcp::socket, const std::string &);
 
 private:
-  rtmp_session(boost::asio::ip::tcp::socket);
+  rtmp_session(boost::asio::ip::tcp::socket, const std::string &);
 };
 
 } // namespace rtmp
