@@ -42,12 +42,16 @@ tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port,
 
   session_manager_ = session_manager::create(info());
 
-  spdlog::info("Successfully created {}", info());
+  spdlog::info("{} created", info());
 }
 
 void tcp_server::do_accept() {
+  if (!acceptor_.is_open()) {
+    return;
+  }
+
   acceptor_.async_accept(
-      [this](boost::system::error_code ec, tcp::socket socket) {
+      [this](boost::system::error_code ec, tcp::socket sock) {
         // Check whether the server was stopped by a signal before this
         // completion handler had a chance to run.
         if (!acceptor_.is_open()) {
@@ -56,7 +60,9 @@ void tcp_server::do_accept() {
         }
 
         if (!ec) {
-          auto new_session = session_alloc_(std::move(socket));
+          // create new session and start
+          auto new_session = session_alloc_(std::move(sock));
+          new_session->start();
         } else {
           spdlog::error("acceptor received error {}, msg = {}", ec.value(),
                         ec.message());
@@ -66,9 +72,15 @@ void tcp_server::do_accept() {
       });
 }
 
-const std::string tcp_server::info() {
-  return fmt::format("TCP server {}|{}|{}", port_,
-                     ip_type_ == ip_type::ipv4 ? "ipv4" : "ipv6", raw_fd_);
+void tcp_server::restart() { do_accept(); }
+
+const std::string &tcp_server::info() {
+  if (server_name_.empty()) {
+    server_name_ =
+        fmt::format("TCP[{}|{}|{}]", port_,
+                    ip_type_ == ip_type::ipv4 ? "ipv4" : "ipv6", raw_fd_);
+  }
+  return server_name_;
 }
 
 void tcp_server::start_signal_listener() {
@@ -76,6 +88,8 @@ void tcp_server::start_signal_listener() {
     spdlog::info("{} received signal {}", info(), signo);
     // close the acceptor
     acceptor_.close();
+    // close the session map
+    session_manager_->stop_all();
   });
 }
 

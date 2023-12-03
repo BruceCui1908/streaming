@@ -1,22 +1,71 @@
 #include "session.h"
 
 #include <spdlog/spdlog.h>
+
 namespace network {
 
 // session impl
-session::session(boost::asio::ip::tcp::socket sock,
-                 const std::string &session_prefix)
-    : socket_{std::move(sock)},
-      session_prefix_{session_prefix}, raw_fd_{socket_.native_handle()} {}
+session::session(SESSION_CONSTRUCTOR_PARAMS)
+    : socket_{std::move(sock)}, session_prefix_{session_prefix},
+      raw_fd_{socket_.native_handle()}, session_manager_{manager} {}
 
-std::string session::id() const {
-  return fmt::format("{}-fd({})", session_prefix_, raw_fd_);
+const std::string &session::id() {
+  if (id_.empty()) {
+    id_ = fmt::format("{}-session({})", session_prefix_, raw_fd_);
+  }
+  return id_;
+}
+
+session::~session() { spdlog::debug("{} destroyed!", id()); }
+
+void session::do_read() {
+  if (!socket_.is_open()) {
+    spdlog::debug("{} socket has been closed, return from do_read()", id());
+    return;
+  }
+
+  socket_.async_read_some(
+      boost::asio::buffer(buffer_),
+      [this](boost::system::error_code ec, size_t bytes_transferred) {
+        if (ec) {
+          if (ec.value() == operation_cancelled) {
+            spdlog::warn("session has been destroyed, return from "
+                         "async_read_some(), err = {}, msg = {}",
+                         ec.value(), ec.message());
+            return;
+          }
+
+          spdlog::error("{} received error {}, msg = {}", id(), ec.value(),
+                        ec.message());
+
+          if (ec != boost::asio::error::operation_aborted) {
+            session_manager_->stop(shared_from_this());
+            return;
+          }
+        }
+
+        // TODO process bytes
+        spdlog::info("{}", std::string(buffer_.data(), bytes_transferred));
+
+        do_read();
+      });
+}
+
+// close the socket
+void session::stop() {
+  if (socket_.is_open()) {
+    socket_.close();
+  }
 }
 
 // session_manager impl
 session_manager::ptr session_manager::create(std::string prefix) {
   return std::shared_ptr<session_manager>(
       new session_manager(std::move(prefix)));
+}
+
+session_manager::~session_manager() {
+  spdlog::debug("session manager {} destroyed!", session_prefix_);
 }
 
 session_manager::session_manager(std::string session_prefix)
@@ -27,8 +76,32 @@ std::string session_manager::generate_session_prefix() {
   return fmt::format("{}-session({})", session_prefix_, ++session_index);
 }
 
-void session_manager::add(const session::ptr &session) {
-  // TODO
+void session_manager::add(const session::ptr &session_ptr) {
+  std::lock_guard<std::mutex> lock(mtx_);
+  session_map_.emplace(session_ptr->id(), session_ptr);
+}
+
+void session_manager::stop(const session::ptr &session_ptr) {
+  std::lock_guard<std::mutex> lock(mtx_);
+  if (session_ptr) {
+    session_ptr->stop();
+    session_map_.erase(session_ptr->id());
+  }
+}
+
+void session_manager::stop_all() {
+  std::lock_guard<std::mutex> lock(mtx_);
+  if (session_map_.empty()) {
+    return;
+  }
+
+  for (auto &it : session_map_) {
+    if (it.second) {
+      it.second->stop();
+    }
+  }
+
+  session_map_.clear();
 }
 
 } // namespace network

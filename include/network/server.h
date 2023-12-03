@@ -24,7 +24,8 @@ public:
   server(server &&) = delete;
   server &operator=(server &&) = delete;
 
-  virtual const std::string info() = 0;
+  virtual const std::string &info() = 0;
+  virtual void restart() = 0;
 
 protected:
   server(uint16_t, sock_type, ip_type);

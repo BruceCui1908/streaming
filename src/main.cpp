@@ -10,10 +10,10 @@ int main() {
 #endif
 
   boost::asio::io_context io_context;
-  auto server = network::tcp_server::create(io_context, 1935);
+  auto rtmpserver = network::tcp_server::create(io_context, 1935);
 
   try {
-    server->start<rtmp::rtmp_session>();
+    rtmpserver->start<rtmp::rtmp_session>();
   } catch (std::exception &ex) {
     spdlog::error("Failed to initialize servers, error = {}", ex.what());
     return EXIT_FAILURE;
@@ -26,6 +26,7 @@ int main() {
       break;
     } catch (std::exception &ex) {
       spdlog::error("io_context received exception, error = {}", ex.what());
+      rtmpserver->restart();
     }
   }
 

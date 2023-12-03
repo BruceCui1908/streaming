@@ -4,8 +4,6 @@
       "name": "Win32",
       "includePath": [
         "${workspaceFolder}/**",
-        "C:/Tools/cpp/fmt/include",
-        "C:/Tools/cpp/spdlog/include",
         "C:\\Tools\\boost\\boost_1_83_0"
       ],
       "defines": ["_DEBUG", "UNICODE", "_UNICODE"],

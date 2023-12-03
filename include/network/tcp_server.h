@@ -19,15 +19,22 @@ public:
   static ptr create(boost::asio::io_context &, const uint16_t,
                     ip_type ipType = ip_type::ipv4);
 
-  const std::string info() override;
+  const std::string &info() override;
+
+  void restart() override;
 
   template <
       typename SessionProtocol,
       typename = std::enable_if_t<std::is_base_of_v<session, SessionProtocol>>>
   void start() {
     session_alloc_ = [this](boost::asio::ip::tcp::socket sock) {
+      if (!session_manager_) {
+        session_manager_ = session_manager::create(info());
+      }
+
       auto session_ptr = SessionProtocol::create(
-          std::move(sock), session_manager_->generate_session_prefix());
+          std::move(sock), session_manager_->generate_session_prefix(),
+          session_manager_);
       session_manager_->add(session_ptr);
       spdlog::debug("{} created!", session_ptr->id());
       return session_ptr;
@@ -53,6 +60,8 @@ private:
 
   // socket fd of this tcp server
   int raw_fd_{-1};
+
+  std::string server_name_;
 
   session_manager::ptr session_manager_;
 
