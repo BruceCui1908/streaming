@@ -47,6 +47,8 @@ protected:
   /// Perform an asynchronous read operation.
   void do_read();
 
+  void do_write(const char *, size_t, bool is_close = false);
+
   /// @brief  data read from the socket, if the operation is asynchronous, then
   /// copy the data into new buffer
   /// @param

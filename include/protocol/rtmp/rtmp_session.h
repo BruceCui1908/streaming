@@ -15,8 +15,12 @@ public:
 
   ~rtmp_session() override = default;
 
+  // from session
   void start() override;
   void stop() override;
+
+  // from rtmp_protocol
+  void send(const char *, size_t) override;
 
 private:
   rtmp_session(RTMP_CONSTRUCTOR_PARAMS);

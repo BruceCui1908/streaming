@@ -19,6 +19,10 @@ void rtmp_session::stop() {
   spdlog::debug("rtmp session on {} stopped!", id());
 }
 
+void rtmp_session::send(const char *data, size_t size) {
+  network::session::do_write(data, size);
+}
+
 void rtmp_session::on_recv(char *data, size_t size) {
   ticker_.reset_time();
 

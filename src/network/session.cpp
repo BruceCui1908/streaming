@@ -35,8 +35,8 @@ void session::do_read() {
             return;
           }
 
-          spdlog::error("{} received error {}, msg = {}", id(), ec.value(),
-                        ec.message());
+          spdlog::error("{} do_read() received error {}, msg = {}", id(),
+                        ec.value(), ec.message());
 
           if (ec != boost::asio::error::operation_aborted) {
             session_manager_->stop(shared_from_this());
@@ -52,10 +52,40 @@ void session::do_read() {
       });
 }
 
+void session::do_write(const char *data, size_t size, bool is_close) {
+  if (!socket_.is_open()) {
+    spdlog::debug("{} socket has been closed, return from do_write()", id());
+    return;
+  }
+
+  boost::asio::async_write(
+      socket_, boost::asio::buffer(data, size),
+      [this, is_close](boost::system::error_code ec, std::size_t bytes_sent) {
+        if (ec) {
+          spdlog::error("{} do_write() received error {}, msg = {}", id(),
+                        ec.value(), ec.message());
+
+          if (ec != boost::asio::error::operation_aborted) {
+            session_manager_->stop(shared_from_this());
+            return;
+          }
+
+        } else {
+          spdlog::debug("successfully sent {} bytes", bytes_sent);
+          if (is_close) {
+            session_manager_->stop(shared_from_this());
+          }
+        }
+      });
+}
+
 // close the socket
 void session::stop() {
   if (socket_.is_open()) {
-    socket_.close();
+    // socket_.close();
+    // Initiate graceful connection closure.
+    boost::system::error_code ignored_ec;
+    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
   }
 }
 
