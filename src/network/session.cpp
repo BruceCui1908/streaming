@@ -11,7 +11,7 @@ session::session(SESSION_CONSTRUCTOR_PARAMS)
 
 const std::string &session::id() {
   if (id_.empty()) {
-    id_ = fmt::format("{}-session({})", session_prefix_, raw_fd_);
+    id_ = fmt::format("{}-client_socket({})", session_prefix_, raw_fd_);
   }
   return id_;
 }
@@ -44,8 +44,9 @@ void session::do_read() {
           }
         }
 
-        // TODO process bytes
-        spdlog::info("{}", std::string(buffer_.data(), bytes_transferred));
+        total_bytes_ += bytes_transferred;
+        // if no error, then send to derived session class
+        on_recv(buffer_.data(), bytes_transferred);
 
         do_read();
       });

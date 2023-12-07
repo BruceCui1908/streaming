@@ -47,6 +47,12 @@ protected:
   /// Perform an asynchronous read operation.
   void do_read();
 
+  /// @brief  data read from the socket, if the operation is asynchronous, then
+  /// copy the data into new buffer
+  /// @param
+  /// @param
+  virtual void on_recv(char *, size_t) = 0;
+
 protected:
   /// Buffer for incoming data.
   std::array<char, 8192> buffer_;
@@ -55,6 +61,7 @@ protected:
   int raw_fd_{-1};
   std::string id_;
   session_manager_ptr session_manager_;
+  uint64_t total_bytes_{0};
 };
 
 class session_manager : public std::enable_shared_from_this<session_manager> {

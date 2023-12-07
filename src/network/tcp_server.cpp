@@ -39,7 +39,6 @@ tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port,
   acceptor_.listen();
 
   raw_fd_ = acceptor_.native_handle();
-
   session_manager_ = session_manager::create(info());
 
   spdlog::info("{} created", info());

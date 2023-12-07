@@ -1,5 +1,4 @@
 #include "rtmp_session.h"
-
 namespace rtmp {
 
 rtmp_session::ptr rtmp_session::create(RTMP_CONSTRUCTOR_PARAMS) {
@@ -19,4 +18,19 @@ void rtmp_session::stop() {
   network::session::stop();
   spdlog::debug("rtmp session on {} stopped!", id());
 }
+
+void rtmp_session::on_recv(char *data, size_t size) {
+  ticker_.reset_time();
+
+  try {
+    // send the packet to the rtmp parser
+    on_parse_rtmp(data, size);
+  } catch (std::exception &ex) {
+    spdlog::error("error received while parsing rtmp, stop the rtmp sesssion, "
+                  "session = {}, error = {}",
+                  id(), ex.what());
+    stop();
+  }
+}
+
 } // namespace rtmp

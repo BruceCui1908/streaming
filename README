@@ -1,1 +1,3 @@
 https://www.partow.net/programming/makefile/index.html
+
+ffmpeg -re -i D:\flv\bunny_5.flv -vcodec h264 -acodec aac -f flv "rtmp://127.0.0.1/live/stream?vhost=test.com&token=abcdef"
