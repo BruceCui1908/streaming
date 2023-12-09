@@ -3,8 +3,7 @@
     {
       "name": "Win32",
       "includePath": [
-        "${workspaceFolder}/**",
-        "C:\\Tools\\boost\\boost_1_83_0"
+        "${workspaceFolder}/**"
       ],
       "defines": ["_DEBUG", "UNICODE", "_UNICODE"],
       "compilerPath": "C:\\Tools\\mingw64\\bin\\gcc.exe",

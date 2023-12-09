@@ -1,9 +1,13 @@
 #pragma once
 
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <stdexcept>
 #include <utility>
+
+#include <arpa/inet.h>
 
 namespace network {
 
@@ -108,20 +112,6 @@ public:
   char *write_begin() { return begin() + write_index_; }
   const char *write_begin() const { return begin() + write_index_; }
 
-  void reserve(size_t len) {
-    if (capacity_ >= len + reserved_prepend_size_) {
-      return;
-    }
-
-    grow(len);
-  }
-
-  void ensure_writable_bytes(size_t n) {
-    if (writable_bytes() < n) {
-      grow(n);
-    }
-  }
-
   void write(const char *data, size_t size) {
     ensure_writable_bytes(size);
     std::memcpy(write_begin(), data, size);
@@ -142,6 +132,14 @@ public:
     }
   }
 
+  void unread_bytes(size_t len) {
+    if (len > read_index_) {
+      read_index_ = reserved_prepend_size_;
+    } else {
+      read_index_ -= len;
+    }
+  }
+
   // Truncate discards all but the first n unread bytes from the buffer
   // but continues to use the same allocated storage.
   // It does nothing if n is greater than the length of the buffer.
@@ -156,9 +154,91 @@ public:
   // discard all the unread data
   void reset() { truncate(0); }
 
+  uint8_t peek_uint8() const {
+    if (unread_length() < sizeof(uint8_t)) {
+      throw std::runtime_error("not enough data");
+    }
+
+    uint8_t x = *data();
+    return x;
+  }
+
+  uint8_t read_uint8() {
+    uint8_t x = peek_uint8();
+    consume(sizeof(x));
+    return x;
+  }
+
+  uint16_t peek_uint16() const {
+    if (unread_length() < sizeof(uint16_t)) {
+      throw std::runtime_error("not enough data");
+    }
+
+    uint16_t x = 0;
+    std::memcpy(&x, data(), sizeof x);
+    return ntohs(x);
+  }
+
+  uint16_t read_uint16() {
+    uint16_t x = peek_uint16();
+    consume(sizeof(x));
+    return x;
+  }
+
+  uint32_t peek_uint32() const {
+    if (unread_length() < sizeof(uint32_t)) {
+      throw std::runtime_error("not enough data");
+    }
+
+    uint32_t x = 0;
+    std::memcpy(&x, data(), sizeof x);
+    return ntohl(x);
+  }
+
+  uint32_t read_uint32() {
+    uint32_t x = peek_uint32();
+    consume(sizeof(x));
+    return x;
+  }
+
+  uint64_t peek_uint64() {
+    if (unread_length() < sizeof(uint64_t)) {
+      throw std::runtime_error("not enough data");
+    }
+
+    uint32_t first = peek_uint32();
+    consume(sizeof(uint32_t));
+    uint32_t second = peek_uint32();
+    unread_bytes(sizeof(uint32_t));
+
+    return ((uint64_t)first << 32) | second;
+  }
+
+  uint64_t read_uint64() {
+    uint64_t x = peek_uint64();
+    consume(sizeof(x));
+    return x;
+  }
+
+  std::string to_string(size_t len) {
+    if (len > unread_length()) {
+      throw std::runtime_error("not enough data");
+    }
+
+    std::string s(data(), len);
+    consume(len);
+    return s;
+  }
+
 private:
   char *begin() { return data_; }
   const char *begin() const { return data_; }
+
+  void ensure_writable_bytes(size_t n) {
+    if (writable_bytes() < n) {
+      grow(n);
+    }
+  }
 
   // grow the buffer to hold len bytes in written area
   void grow(size_t len) {
