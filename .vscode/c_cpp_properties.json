@@ -2,11 +2,9 @@
   "configurations": [
     {
       "name": "Win32",
-      "includePath": [
-        "${workspaceFolder}/**"
-      ],
+      "includePath": ["${workspaceFolder}/**"],
       "defines": ["_DEBUG", "UNICODE", "_UNICODE"],
-      "compilerPath": "C:\\Tools\\mingw64\\bin\\gcc.exe",
+      "compilerPath": "D:\\Tools\\mingw64\\bin\\gcc.exe",
       "cStandard": "c17",
       "cppStandard": "gnu++17",
       "intelliSenseMode": "windows-gcc-x64"
