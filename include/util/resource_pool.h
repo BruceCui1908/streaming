@@ -45,6 +45,12 @@ public:
 private:
   resource_pool(size_t pool_size) : objs_(pool_size) {
     alloc_ = []() -> T * { return new T(); };
+    for (auto &ptr : objs_) {
+
+      if (!ptr) {
+        ptr = alloc_();
+      }
+    }
   }
 
   T *get_obj_ptr() {

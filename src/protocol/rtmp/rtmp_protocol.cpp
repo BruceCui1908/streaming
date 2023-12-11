@@ -106,6 +106,11 @@ const char *rtmp_protocol::handle_C2(const char *data, size_t size) {
   };
 
   spdlog::debug("rtmp hand shake succeed!");
+  // send cmd
+  set_chunk_size(60000);
+  send_acknowledgement(5000000);
+  set_peer_bandwidth(5000000);
+
   return split_rtmp(data + C1_HANDSHAKE_SIZE, size - C1_HANDSHAKE_SIZE);
 }
 
@@ -239,19 +244,20 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
     auto remain_msg_len =
         chunk_data.msg_length - chunk_data.buffer.unread_length();
     auto more = std::min(chunk_size_in_, (size_t)(remain_msg_len));
+
     if (size < header_length + offset + more) {
       return ptr;
     }
 
     if (more) {
-      chunk_data.buffer.write(data + header_length + offset, more);
+      chunk_data.buffer.write(ptr + header_length + offset, more);
     }
 
     ptr += header_length + offset + more;
     size -= header_length + offset + more;
 
+    // if the frame is ready, then sent to handle chunk
     if (chunk_data.msg_length == chunk_data.buffer.unread_length()) {
-      spdlog::debug("rtmp frame is ready");
       msg_stream_id_ = chunk_data.msg_stream_id;
       chunk_data.time_stamp =
           time_stamp + (chunk_data.is_abs_stamp ? 0 : chunk_data.time_stamp);
@@ -275,6 +281,15 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
   }
 
   switch (ptr->msg_type_id) {
+  case MSG_SET_CHUNK: {
+    if (ptr->buffer.unread_length() < 4) {
+      throw std::runtime_error("MSG_SET_CHUNK not enough data");
+    }
+    chunk_size_in_ = util::load_be32(ptr->buffer.data());
+    spdlog::debug("received MSG_SET_CHUNK {}", chunk_size_in_);
+    break;
+  }
+
   case MSG_ACK: {
     // The client or the server MUST send an acknowledgment to the peer after
     // receiving bytes equal to the window size. The window size is the maximum
@@ -303,11 +318,13 @@ void rtmp_protocol::on_process_cmd(AMFDecoder &dec) {
   // member function pointer
   typedef void (rtmp_protocol::*cmd_func)(AMFDecoder &);
   static std::unordered_map<std::string, cmd_func> cmd_funcs = {
-      {"connect", &rtmp_protocol::on_amf_connect}};
+      {"connect", &rtmp_protocol::on_amf_connect},
+      {"createStream", &rtmp_protocol::on_amf_createStream}};
 
+  // the first field must be cmd string
   std::string method = dec.load<std::string>();
 
-  spdlog::debug("cmd method = {}", method);
+  spdlog::debug("received AMF{} command {}", dec.version(), method);
 
   auto it = cmd_funcs.find(method);
   if (it == cmd_funcs.end()) {
@@ -315,17 +332,73 @@ void rtmp_protocol::on_process_cmd(AMFDecoder &dec) {
     return;
   }
 
-  recv_req_id_ = dec.load<double>();
+  transaction_id_ = dec.load<double>();
   auto func = it->second;
   (this->*func)(dec);
 }
 
-void rtmp_protocol::on_amf_connect(AMFDecoder &dec) {
-  auto params = dec.load_object();
-  for (auto &it : params.get_map()) {
-    spdlog::debug("key = {}, value = {}", it.first, it.second.as_string());
-  }
+/**
+The client sends the connect command to the server to request connection to a
+server application instance.
 
+The command structure from the client to the server is as follows:
+
++----------------+---------+---------------------------------------+
+|  Field Name    |  Type   |           Description                 |
++--------------- +---------+---------------------------------------+
+| Command Name   | String  | Name of the command. Set to "connect".|
++----------------+---------+---------------------------------------+
+| Transaction ID | Number  | Always set to 1.                      |
++----------------+---------+---------------------------------------+
+| Command Object | Object  | Command information object which has  |
+|                |         | the name-value pairs.                 |
++----------------+---------+---------------------------------------+
+| Optional User  | Object  | Any optional information              |
+| Arguments      |         |                                       |
++----------------+---------+---------------------------------------+
+
+Following is the description of the name-value pairs used in Command Object of
+the connect command.
+*/
+void rtmp_protocol::on_amf_connect(AMFDecoder &dec) {
+
+  auto params = dec.load_object();
+  // for (auto &it : params.get_map()) {
+  //   spdlog::debug("key = {}, value = {}", it.first, it.second.as_string());
+  // }
+
+  app_ = params["app"];
+  tcUrl_ = params["tcUrl"];
+
+  AMFValue version(AMF0Type::AMF_OBJECT);
+  version.set("fmsVer", "FMS/3,0,1,123");
+  version.set("capabilities", 31.0);
+
+  AMFValue status(AMF0Type::AMF_OBJECT);
+  status.set("level", "status");
+  status.set("code", "NetConnection.Connect.Success");
+  status.set("description", "Connection succeeded");
+
+  AMFEncoder encoder;
+  encoder << "_result" << transaction_id_ << version << status;
+
+  send_rtmp(MSG_CMD, msg_stream_id_, encoder.data(), 0,
+            CHUNK_CLIENT_REQUEST_BEFORE);
+
+  AMFEncoder invoke;
+  invoke << "onBWDone" << 0.0 << nullptr;
+  send_rtmp(MSG_CMD, msg_stream_id_, invoke.data(), 0,
+            CHUNK_CLIENT_REQUEST_BEFORE);
+}
+
+void rtmp_protocol::on_amf_createStream(AMFDecoder &dec) {
+  AMFEncoder encoder;
+  encoder << "_result" << transaction_id_ << nullptr << 0.0;
+  send_rtmp(MSG_CMD, msg_stream_id_, encoder.data(), 0,
+            CHUNK_CLIENT_REQUEST_BEFORE);
+}
+
+void rtmp_protocol::onCmd_publish(AMFDecoder &dec) {
   // TODO
 }
 
@@ -340,7 +413,7 @@ void rtmp_protocol::send_rtmp(uint8_t msg_type_id, uint32_t msg_stream_id,
 
   auto chunk_header = pool_->obtain();
   chunk_header->set_capacity(sizeof(rtmp_header));
-  chunk_header->set_capacity(sizeof(rtmp_header));
+  chunk_header->set_size(sizeof(rtmp_header));
   // convert to rtmp_header
   rtmp_header *header = reinterpret_cast<rtmp_header *>(chunk_header->data());
   header->fmt = 0;

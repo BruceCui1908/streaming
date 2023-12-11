@@ -19,8 +19,9 @@ void rtmp_session::stop() {
   spdlog::debug("rtmp session on {} stopped!", id());
 }
 
-void rtmp_session::send(const char *data, size_t size) {
-  network::session::do_write(data, size);
+void rtmp_session::send(const char *data, size_t size, bool is_async,
+                        bool is_close) {
+  network::session::do_write(data, size, is_async, is_close);
 }
 
 void rtmp_session::on_recv(char *data, size_t size) {

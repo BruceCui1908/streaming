@@ -19,7 +19,8 @@ protected:
 
   void on_parse_rtmp(const char *, size_t);
 
-  virtual void send(const char *, size_t) = 0;
+  virtual void send(const char *, size_t, bool is_async = false,
+                    bool is_close = false) = 0;
 
 private:
   const char *handle_C0C1(const char *, size_t);
@@ -29,6 +30,8 @@ private:
 
   void on_process_cmd(AMFDecoder &);
   void on_amf_connect(AMFDecoder &);
+  void on_amf_createStream(AMFDecoder &);
+  void onCmd_publish(AMFDecoder &);
 
   void send_rtmp(uint8_t msg_type_id, uint32_t msg_stream_id,
                  const std::string &data, uint32_t time_stamp,
@@ -42,6 +45,7 @@ private:
   // P13
   int chunk_stream_id_{0};
   int msg_stream_id_{0};
+
   size_t chunk_size_in_ = DEFAULT_CHUNK_LEN;
   size_t chunk_size_out_ = DEFAULT_CHUNK_LEN;
 
@@ -54,7 +58,7 @@ private:
   network::flat_buffer cache_data_;
   std::function<const char *(const char *, size_t)> next_step_func_;
 
-  double recv_req_id_ = 0;
+  double transaction_id_ = 0;
 
   // Acknowledgement
   uint64_t bytes_sent_{0};
@@ -62,6 +66,10 @@ private:
   uint64_t bytes_recv_{0};
   uint64_t bytes_recv_last_{0};
   uint32_t windows_size_{0};
+
+  // media info
+  std::string app_;
+  std::string tcUrl_;
 };
 
 } // namespace rtmp

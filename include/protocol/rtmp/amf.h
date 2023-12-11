@@ -7,17 +7,17 @@
 
 namespace rtmp {
 
-enum AMFType {
-  AMF_NUMBER,
-  AMF_INTEGER,
-  AMF_BOOLEAN,
-  AMF_STRING,
-  AMF_OBJECT,
-  AMF_NULL,
-  AMF_UNDEFINED,
-  AMF_ECMA_ARRAY,
-  AMF_STRICT_ARRAY,
-};
+typedef enum {
+  AMF_NUMBER = 0x00,
+  AMF_BOOLEAN = 0x01,
+  AMF_STRING = 0x02,
+  AMF_OBJECT = 0x03,
+  AMF_NULL = 0x05,
+  AMF_ECMA_ARRAY = 0x08,
+  AMF_OBJECT_END = 0x09,
+  AMF_STRICT_ARRAY = 0x0a,
+  AMF_SWITCH_3 = 0x11,
+} AMF0Type;
 
 class AMFValue;
 
@@ -26,11 +26,10 @@ public:
   using mapType = std::map<std::string, AMFValue>;
   using arrayType = std::vector<AMFValue>;
 
-  AMFValue(AMFType type = AMF_NULL);
+  AMFValue(AMF0Type type = AMF0Type::AMF_NULL);
   AMFValue(const char *);
   AMFValue(const std::string &);
   AMFValue(double);
-  AMFValue(int);
   AMFValue(bool);
 
   AMFValue(const AMFValue &);
@@ -38,7 +37,7 @@ public:
   ~AMFValue();
 
   void clear();
-  AMFType type() const;
+  AMF0Type type() const;
   const std::string &as_string() const;
   double as_number() const;
   int as_integer() const;
@@ -57,11 +56,10 @@ private:
   void init();
 
 private:
-  AMFType type_;
+  AMF0Type type_;
 
   union {
     double number;
-    int integer;
     bool boolean;
     std::string *string;
     mapType *object;
@@ -78,15 +76,39 @@ public:
 
   AMFValue load_object();
 
-private:
+  network::flat_buffer &data() { return buf_; }
+
   uint8_t peek_front();
   uint8_t pop_front();
 
   std::string load_key();
 
+  const int version() const { return version_; }
+
 private:
   network::flat_buffer &buf_;
   int version_;
+};
+
+class AMFEncoder {
+public:
+  AMFEncoder &operator<<(const char *);
+  AMFEncoder &operator<<(const std::string &);
+  AMFEncoder &operator<<(std::nullptr_t);
+  AMFEncoder &operator<<(const int);
+  AMFEncoder &operator<<(const double);
+  AMFEncoder &operator<<(const bool);
+  // only for object
+  AMFEncoder &operator<<(const AMFValue &);
+
+  const std::string &data() const;
+  void clear();
+
+private:
+  void write_key(const std::string &);
+
+private:
+  std::string buf;
 };
 
 } // namespace rtmp

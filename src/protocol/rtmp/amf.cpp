@@ -1,28 +1,33 @@
 #include "amf.h"
 
 #include <cstring>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 
 namespace rtmp {
 
 /// AMFValue
-AMFValue::AMFValue(AMFType type) : type_{type} { init(); }
+AMFValue::AMFValue(AMF0Type type) : type_{type} { init(); }
 
-AMFValue::AMFValue(const char *s) : AMFValue(AMF_STRING) { *value_.string = s; }
+AMFValue::AMFValue(const char *s) : AMFValue(AMF0Type::AMF_STRING) {
+  *value_.string = s;
+}
 
 AMFValue::AMFValue(const std::string &s) : AMFValue(s.c_str()) {}
 
-AMFValue::AMFValue(double n) : AMFValue(AMF_NUMBER) { value_.number = n; }
+AMFValue::AMFValue(double n) : AMFValue(AMF0Type::AMF_NUMBER) {
+  value_.number = n;
+}
 
-AMFValue::AMFValue(int n) : AMFValue(AMF_INTEGER) { value_.integer = n; }
-
-AMFValue::AMFValue(bool b) : AMFValue(AMF_BOOLEAN) { value_.boolean = b; }
+AMFValue::AMFValue(bool b) : AMFValue(AMF0Type::AMF_BOOLEAN) {
+  value_.boolean = b;
+}
 
 AMFValue::~AMFValue() { destroy(); }
 
 void AMFValue::destroy() {
   switch (type_) {
-  case AMF_STRING: {
+  case AMF0Type::AMF_STRING: {
     if (value_.string) {
       delete value_.string;
       value_.string = nullptr;
@@ -30,8 +35,8 @@ void AMFValue::destroy() {
     break;
   }
 
-  case AMF_OBJECT:
-  case AMF_ECMA_ARRAY: {
+  case AMF0Type::AMF_OBJECT:
+  case AMF0Type::AMF_ECMA_ARRAY: {
     if (value_.object) {
       delete value_.object;
       value_.object = nullptr;
@@ -39,7 +44,7 @@ void AMFValue::destroy() {
     break;
   }
 
-  case AMF_STRICT_ARRAY: {
+  case AMF0Type::AMF_STRICT_ARRAY: {
     if (value_.array) {
       delete value_.array;
       value_.array = nullptr;
@@ -54,18 +59,18 @@ void AMFValue::destroy() {
 
 void AMFValue::init() {
   switch (type_) {
-  case AMF_OBJECT:
-  case AMF_ECMA_ARRAY: {
+  case AMF0Type::AMF_OBJECT:
+  case AMF0Type::AMF_ECMA_ARRAY: {
     value_.object = new mapType;
     break;
   }
 
-  case AMF_STRING: {
+  case AMF0Type::AMF_STRING: {
     value_.string = new std::string;
     break;
   }
 
-  case AMF_STRICT_ARRAY: {
+  case AMF0Type::AMF_STRICT_ARRAY: {
     value_.array = new arrayType;
     break;
   }
@@ -75,7 +80,9 @@ void AMFValue::init() {
   }
 }
 
-AMFValue::AMFValue(const AMFValue &other) : type_{AMF_NULL} { *this = other; }
+AMFValue::AMFValue(const AMFValue &other) : type_{AMF0Type::AMF_NULL} {
+  *this = other;
+}
 
 AMFValue &AMFValue::operator=(const AMFValue &other) {
   destroy();
@@ -83,33 +90,28 @@ AMFValue &AMFValue::operator=(const AMFValue &other) {
   init();
 
   switch (type_) {
-  case AMF_STRING: {
+  case AMF0Type::AMF_STRING: {
     *value_.string = (*other.value_.string);
     break;
   }
 
-  case AMF_OBJECT:
-  case AMF_ECMA_ARRAY: {
+  case AMF0Type::AMF_OBJECT:
+  case AMF0Type::AMF_ECMA_ARRAY: {
     *value_.object = (*other.value_.object);
     break;
   }
 
-  case AMF_STRICT_ARRAY: {
+  case AMF0Type::AMF_STRICT_ARRAY: {
     *value_.array = (*other.value_.array);
     break;
   }
 
-  case AMF_NUMBER: {
+  case AMF0Type::AMF_NUMBER: {
     value_.number = other.value_.number;
     break;
   }
 
-  case AMF_INTEGER: {
-    value_.integer = other.value_.integer;
-    break;
-  }
-
-  case AMF_BOOLEAN: {
+  case AMF0Type::AMF_BOOLEAN: {
     value_.boolean = other.value_.boolean;
     break;
   }
@@ -123,15 +125,15 @@ AMFValue &AMFValue::operator=(const AMFValue &other) {
 
 void AMFValue::clear() {
   switch (type_) {
-  case AMF_STRING: {
+  case AMF0Type::AMF_STRING: {
     if (value_.string) {
       value_.string->clear();
     }
     break;
   }
 
-  case AMF_OBJECT:
-  case AMF_ECMA_ARRAY: {
+  case AMF0Type::AMF_OBJECT:
+  case AMF0Type::AMF_ECMA_ARRAY: {
     if (value_.object) {
       value_.object->clear();
     }
@@ -143,10 +145,10 @@ void AMFValue::clear() {
   }
 }
 
-AMFType AMFValue::type() const { return type_; }
+AMF0Type AMFValue::type() const { return type_; }
 
 const std::string &AMFValue::as_string() const {
-  if (type_ != AMF_STRING) {
+  if (type_ != AMF0Type::AMF_STRING) {
     throw std::runtime_error("AMF not a string");
   }
 
@@ -155,10 +157,8 @@ const std::string &AMFValue::as_string() const {
 
 double AMFValue::as_number() const {
   switch (type_) {
-  case AMF_NUMBER:
+  case AMF0Type::AMF_NUMBER:
     return value_.number;
-  case AMF_INTEGER:
-    return value_.integer;
   case AMF_BOOLEAN:
     return value_.boolean;
   default:
@@ -168,11 +168,9 @@ double AMFValue::as_number() const {
 
 int AMFValue::as_integer() const {
   switch (type_) {
-  case AMF_NUMBER:
+  case AMF0Type::AMF_NUMBER:
     return static_cast<int>(value_.number);
-  case AMF_INTEGER:
-    return value_.integer;
-  case AMF_BOOLEAN:
+  case AMF0Type::AMF_BOOLEAN:
     return value_.boolean;
   default:
     throw std::runtime_error("AMF not a integer");
@@ -181,11 +179,9 @@ int AMFValue::as_integer() const {
 
 bool AMFValue::as_boolean() const {
   switch (type_) {
-  case AMF_NUMBER:
+  case AMF0Type::AMF_NUMBER:
     return value_.number;
-  case AMF_INTEGER:
-    return value_.integer;
-  case AMF_BOOLEAN:
+  case AMF0Type::AMF_BOOLEAN:
     return value_.boolean;
   default:
     throw std::runtime_error("AMF not a boolean");
@@ -193,7 +189,7 @@ bool AMFValue::as_boolean() const {
 }
 
 const AMFValue &AMFValue::operator[](const char *key) const {
-  if (type_ != AMF_OBJECT && type_ != AMF_ECMA_ARRAY) {
+  if (type_ != AMF0Type::AMF_OBJECT && type_ != AMF0Type::AMF_ECMA_ARRAY) {
     throw std::runtime_error("AMF is neither an object nor an array");
   }
 
@@ -203,7 +199,7 @@ const AMFValue &AMFValue::operator[](const char *key) const {
 
   auto it = value_.object->find(key);
   if (it == value_.object->end()) {
-    static AMFValue val(AMF_NULL);
+    static AMFValue val(AMF0Type::AMF_NULL);
     return val;
   }
 
@@ -213,7 +209,7 @@ const AMFValue &AMFValue::operator[](const char *key) const {
 AMFValue::operator bool() const { return type_ != AMF_NULL; }
 
 void AMFValue::set(const std::string &key, const AMFValue &value) {
-  if (type_ != AMF_OBJECT && type_ != AMF_ECMA_ARRAY) {
+  if (type_ != AMF0Type::AMF_OBJECT && type_ != AMF0Type::AMF_ECMA_ARRAY) {
     throw std::runtime_error("AMF is neither an object nor an array");
   }
 
@@ -225,53 +221,16 @@ void AMFValue::set(const std::string &key, const AMFValue &value) {
 }
 
 const AMFValue::mapType &AMFValue::get_map() const {
-  if (type_ != AMF_OBJECT && type_ != AMF_ECMA_ARRAY) {
+  if (type_ != AMF0Type::AMF_OBJECT && type_ != AMF0Type::AMF_ECMA_ARRAY) {
     throw std::runtime_error("AMF is neither an object nor an array");
   }
   return *value_.object;
 }
 
-enum {
-  AMF0_NUMBER,
-  AMF0_BOOLEAN,
-  AMF0_STRING,
-  AMF0_OBJECT,
-  AMF0_MOVIECLIP,
-  AMF0_NULL,
-  AMF0_UNDEFINED,
-  AMF0_REFERENCE,
-  AMF0_ECMA_ARRAY,
-  AMF0_OBJECT_END,
-  AMF0_STRICT_ARRAY,
-  AMF0_DATE,
-  AMF0_LONG_STRING,
-  AMF0_UNSUPPORTED,
-  AMF0_RECORD_SET,
-  AMF0_XML_OBJECT,
-  AMF0_TYPED_OBJECT,
-  AMF0_SWITCH_AMF3,
-};
-
-enum {
-  AMF3_UNDEFINED,
-  AMF3_NULL,
-  AMF3_FALSE,
-  AMF3_TRUE,
-  AMF3_INTEGER,
-  AMF3_NUMBER,
-  AMF3_STRING,
-  AMF3_LEGACY_XML,
-  AMF3_DATE,
-  AMF3_ARRAY,
-  AMF3_OBJECT,
-  AMF3_XML,
-  AMF3_BYTE_ARRAY,
-};
-
 /// AMFDecoder
 uint8_t AMFDecoder::pop_front() {
   uint8_t x = buf_.read_uint8();
-  if (version_ == 0 && x == AMF0_SWITCH_AMF3) {
+  if (version_ == 0 && x == AMF0Type::AMF_SWITCH_3) {
     version_ = 3;
   }
   return x;
@@ -297,26 +256,16 @@ template <> unsigned int AMFDecoder::load<unsigned int>() {
 
 template <> std::string AMFDecoder::load<std::string>() {
   size_t str_len = 0;
-  uint8_t type = pop_front();
-
-  if (version_ == 3) {
-    if (type != AMF3_STRING) {
-      throw std::runtime_error("Expected a string");
-    }
-    str_len = load<unsigned int>() / 2;
-  } else {
-    if (type != AMF0_STRING) {
-      throw std::runtime_error("Expected a string");
-    }
-    str_len = buf_.read_uint16();
+  if (pop_front() != AMF0Type::AMF_STRING) {
+    throw std::runtime_error("Expected a string");
   }
-
+  str_len = buf_.read_uint16();
   return buf_.to_string(str_len);
 }
 
 template <> double AMFDecoder::load<double>() {
   uint8_t type = pop_front();
-  if (type != AMF0_NUMBER) {
+  if (type != AMF0Type::AMF_NUMBER) {
     throw std::runtime_error("Expected a number");
   }
 
@@ -331,11 +280,11 @@ std::string AMFDecoder::load_key() {
 }
 
 AMFValue AMFDecoder::load_object() {
-  if (pop_front() != AMF0_OBJECT) {
+  if (pop_front() != AMF0Type::AMF_OBJECT) {
     throw std::runtime_error("expect an object");
   }
 
-  AMFValue object(AMF_OBJECT);
+  AMFValue object(AMF0Type::AMF_OBJECT);
   while (1) {
     std::string key = load_key();
     if (key.empty()) {
@@ -345,9 +294,96 @@ AMFValue AMFDecoder::load_object() {
     object.set(key, value);
   }
 
-  pop_front();
+  if (pop_front() != AMF0Type::AMF_OBJECT_END) {
+    throw std::runtime_error("expect an object end");
+  }
 
   return object;
+}
+
+/// AMFEncoder
+AMFEncoder &AMFEncoder::operator<<(const char *s) {
+  if (!s) {
+    throw std::runtime_error("AMFEncoder cannot accpet empty string");
+  }
+
+  buf += char(AMF0Type::AMF_STRING);
+  auto len = std::strlen(s);
+  uint16_t str_len = htons((uint16_t)len);
+  buf.append((char *)&str_len, 2);
+  buf += s;
+  return *this;
+}
+
+AMFEncoder &AMFEncoder::operator<<(const std::string &s) {
+  return (*this) << (s.c_str());
+}
+
+AMFEncoder &AMFEncoder::operator<<(std::nullptr_t) {
+  buf += char(AMF0Type::AMF_NULL);
+  return *this;
+}
+
+AMFEncoder &AMFEncoder::operator<<(const int n) { return (*this) << (double)n; }
+
+AMFEncoder &AMFEncoder::operator<<(const double num) {
+  buf += char(AMF0Type::AMF_NUMBER);
+  uint64_t encoded = 0;
+  memcpy(&encoded, &num, 8);
+  uint32_t val = htonl(encoded >> 32);
+  buf.append((char *)&val, 4);
+  val = htonl(encoded & 0xFFFFFFFF);
+  buf.append((char *)&val, 4);
+  return *this;
+}
+
+AMFEncoder &AMFEncoder::operator<<(const bool b) {
+  buf += char(AMF0Type::AMF_BOOLEAN);
+  buf += char(b);
+  return *this;
+}
+
+AMFEncoder &AMFEncoder::operator<<(const AMFValue &obj) {
+  int amf_type = (int)obj.type();
+  switch (amf_type) {
+  case AMF0Type::AMF_STRING: {
+    *this << obj.as_string();
+    break;
+  }
+  case AMF0Type::AMF_NUMBER: {
+    *this << obj.as_number();
+    break;
+  }
+
+  case AMF0Type::AMF_OBJECT: {
+    if (obj.type() != AMF0Type::AMF_OBJECT) {
+      throw std::runtime_error("only accept AMF0_OBJECT type");
+    }
+    buf += char(AMF0Type::AMF_OBJECT);
+    for (auto &pr : obj.get_map()) {
+      write_key(pr.first);
+      *this << pr.second;
+    }
+    write_key("");
+    buf += char(AMF0Type::AMF_OBJECT_END);
+    break;
+  }
+
+  default:
+    spdlog::error("unsupported amf type {}", amf_type);
+    break;
+  }
+  return *this;
+}
+
+const std::string &AMFEncoder::data() const { return buf; }
+
+void AMFEncoder::clear() { buf.clear(); }
+
+void AMFEncoder::write_key(const std::string &s) {
+  uint16_t str_len = htons((uint16_t)s.size());
+  buf.append((char *)&str_len, 2);
+  buf += s;
 }
 
 } // namespace rtmp

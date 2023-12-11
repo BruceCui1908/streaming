@@ -20,7 +20,8 @@ public:
   void stop() override;
 
   // from rtmp_protocol
-  void send(const char *, size_t) override;
+  void send(const char *, size_t, bool is_async = false,
+            bool is_close = false) override;
 
 private:
   rtmp_session(RTMP_CONSTRUCTOR_PARAMS);
