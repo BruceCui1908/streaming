@@ -30,7 +30,7 @@ void rtmp_session::on_recv(char *data, size_t size) {
   try {
     // send the packet to the rtmp parser
     on_parse_rtmp(data, size);
-  } catch (std::exception &ex) {
+  } catch (const std::exception &ex) {
     spdlog::error("error received while parsing rtmp, stop the rtmp sesssion, "
                   "session = {}, error = {}",
                   id(), ex.what());

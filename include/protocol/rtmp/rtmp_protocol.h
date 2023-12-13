@@ -1,8 +1,10 @@
 #pragma once
 
 #include "amf.h"
+#include "media/media_info.h"
 #include "network/buffer.h"
 #include "network/flat_buffer.h"
+#include "rtmp_media_source.h"
 #include "rtmp_packet.h"
 #include "util/resource_pool.h"
 
@@ -31,7 +33,7 @@ private:
   void on_process_cmd(AMFDecoder &);
   void on_amf_connect(AMFDecoder &);
   void on_amf_createStream(AMFDecoder &);
-  void onCmd_publish(AMFDecoder &);
+  void on_amf_publish(AMFDecoder &);
 
   void send_rtmp(uint8_t msg_type_id, uint32_t msg_stream_id,
                  const std::string &data, uint32_t time_stamp,
@@ -68,8 +70,13 @@ private:
   uint32_t windows_size_{0};
 
   // media info
-  std::string app_;
-  std::string tcUrl_;
+  media::media_info::ptr media_info_;
+
+  // media source
+  rtmp_media_source::ptr rtmp_source_;
+
+  // ownership
+  std::shared_ptr<void> src_ownership_;
 };
 
 } // namespace rtmp

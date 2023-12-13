@@ -1,5 +1,6 @@
 #include "rtmp_protocol.h"
 
+#include "media/media_source.h"
 #include "util/util.h"
 #include <algorithm>
 #include <spdlog/spdlog.h>
@@ -274,6 +275,7 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
   return ptr;
 }
 
+/// after the packet has been splited, pass here to process
 void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
   if (!ptr) {
     spdlog::error("handle_chunk received empty packet");
@@ -319,7 +321,8 @@ void rtmp_protocol::on_process_cmd(AMFDecoder &dec) {
   typedef void (rtmp_protocol::*cmd_func)(AMFDecoder &);
   static std::unordered_map<std::string, cmd_func> cmd_funcs = {
       {"connect", &rtmp_protocol::on_amf_connect},
-      {"createStream", &rtmp_protocol::on_amf_createStream}};
+      {"createStream", &rtmp_protocol::on_amf_createStream},
+      {"publish", &rtmp_protocol::on_amf_publish}};
 
   // the first field must be cmd string
   std::string method = dec.load<std::string>();
@@ -363,12 +366,13 @@ the connect command.
 void rtmp_protocol::on_amf_connect(AMFDecoder &dec) {
 
   auto params = dec.load_object();
-  // for (auto &it : params.get_map()) {
-  //   spdlog::debug("key = {}, value = {}", it.first, it.second.as_string());
-  // }
+  for (auto &it : params.get_map()) {
+    spdlog::debug("key = {}, value = {}", it.first, it.second.as_string());
+  }
 
-  app_ = params["app"];
-  tcUrl_ = params["tcUrl"];
+  media_info_ = media::media_info::create("RTMP");
+  media_info_->set_app(params["app"].as_string());
+  media_info_->set_tc_url(params["tcUrl"].as_string());
 
   AMFValue version(AMF0Type::AMF_OBJECT);
   version.set("fmsVer", "FMS/3,0,1,123");
@@ -398,8 +402,80 @@ void rtmp_protocol::on_amf_createStream(AMFDecoder &dec) {
             CHUNK_CLIENT_REQUEST_BEFORE);
 }
 
-void rtmp_protocol::onCmd_publish(AMFDecoder &dec) {
-  // TODO
+void rtmp_protocol::on_amf_publish(AMFDecoder &dec) {
+  // the first byte must be null
+  if (dec.pop_front() != AMF0Type::AMF_NULL) {
+    throw std::runtime_error("publish cmd expects NULL");
+  }
+
+  media_info_->parse_stream(dec.load<std::string>());
+
+  // TODO token validation callback
+
+  // find the media source
+  auto [media_ptr, has_created] =
+      media::media_source::find(media_info_->schema(), media_info_->vhost(),
+                                media_info_->app(), media_info_->stream_id());
+
+  try {
+    if (!media_ptr) {
+      if (has_created) {
+        // the source lost for unknown reason
+        spdlog::warn("{} has been created, but lost", media_info_->info());
+      }
+
+      auto rtmp_src_ptr = rtmp_media_source::create(media_info_);
+      src_ownership_ = rtmp_src_ptr->get_ownership();
+      if (!src_ownership_) {
+        throw std::runtime_error(
+            fmt::format("cannot get ownership of {}", media_info_->info()));
+      }
+
+      rtmp_src_ptr->regist();
+      rtmp_source_ = std::move(rtmp_src_ptr);
+    } else {
+      auto rtmp_src = std::dynamic_pointer_cast<rtmp_media_source>(media_ptr);
+      if (!rtmp_src) {
+        spdlog::error("{} is not rtmp source", media_info_->info());
+        throw std::runtime_error(
+            fmt::format("{} is invalid", media_info_->info()));
+      }
+      spdlog::info("{} has been created, now reconnecting",
+                   media_info_->info());
+      src_ownership_ = media_ptr->get_ownership();
+      if (!src_ownership_) {
+        throw std::runtime_error(
+            fmt::format("cannot get ownership of {}", media_info_->info()));
+      }
+      rtmp_source_ = std::move(rtmp_src);
+    }
+  } catch (const std::exception &ex) {
+    spdlog::error("failed to create new rtmp stream, err = {}", ex.what());
+    AMFValue status(AMF0Type::AMF_OBJECT);
+    status.set("level", "error");
+    status.set("code", "NetStream.Publish.BadName");
+    status.set("description", ex.what());
+    status.set("clientid", "0");
+
+    AMFEncoder encoder;
+    encoder << "onStatus" << transaction_id_ << nullptr << status;
+    send_rtmp(MSG_CMD, msg_stream_id_, encoder.data(), 0,
+              CHUNK_CLIENT_REQUEST_BEFORE);
+    throw ex;
+  }
+
+  AMFValue status(AMF0Type::AMF_OBJECT);
+  status.set("level", "status");
+  status.set("code", "NetStream.Publish.Start");
+  status.set("description", "Start publishing");
+  status.set("clientid", "0");
+
+  AMFEncoder encoder;
+  encoder << "onStatus" << transaction_id_ << nullptr << status;
+  send_rtmp(MSG_CMD, msg_stream_id_, encoder.data(), 0,
+            CHUNK_CLIENT_REQUEST_BEFORE);
+
+  spdlog::info("{} has been published", media_info_->info());
 }
 
 void rtmp_protocol::send_rtmp(uint8_t msg_type_id, uint32_t msg_stream_id,
