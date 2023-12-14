@@ -125,6 +125,8 @@ public:
            !stream_id_.empty();
   }
 
+  ~media_info() { spdlog::debug("media_info {} destroyed", info_); }
+
 private:
   media_info(std::string schmea) : schema_{schmea} {
     created_time_ = util::current_millis();

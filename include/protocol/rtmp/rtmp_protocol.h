@@ -8,6 +8,7 @@
 #include "rtmp_packet.h"
 #include "util/resource_pool.h"
 
+#include <any>
 #include <unordered_map>
 #include <utility>
 
@@ -34,6 +35,7 @@ private:
   void on_amf_connect(AMFDecoder &);
   void on_amf_createStream(AMFDecoder &);
   void on_amf_publish(AMFDecoder &);
+  void on_process_metadata(AMFDecoder &);
 
   void send_rtmp(uint8_t msg_type_id, uint32_t msg_stream_id,
                  const std::string &data, uint32_t time_stamp,
@@ -77,6 +79,9 @@ private:
 
   // ownership
   std::shared_ptr<void> src_ownership_;
+
+  // store metadata
+  std::unordered_map<std::string, std::any> meta_data_{};
 };
 
 } // namespace rtmp

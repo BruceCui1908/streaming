@@ -159,7 +159,7 @@ double AMFValue::as_number() const {
   switch (type_) {
   case AMF0Type::AMF_NUMBER:
     return value_.number;
-  case AMF_BOOLEAN:
+  case AMF0Type::AMF_BOOLEAN:
     return value_.boolean;
   default:
     throw std::runtime_error("AMF not a number");
@@ -273,6 +273,15 @@ template <> double AMFDecoder::load<double>() {
   double n = 0;
   std::memcpy(&n, &num, sizeof(num));
   return n;
+}
+
+template <> bool AMFDecoder::load<bool>() {
+  uint8_t type = pop_front();
+  if (type != AMF0Type::AMF_BOOLEAN) {
+    throw std::runtime_error("Expected a bool");
+  }
+
+  return pop_front() != 0;
 }
 
 std::string AMFDecoder::load_key() {

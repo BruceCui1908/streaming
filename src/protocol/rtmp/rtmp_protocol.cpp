@@ -311,7 +311,30 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
     break;
   }
 
+  case MSG_DATA:
+  case MSG_DATA3: {
+    AMFDecoder dec(ptr->buffer, ptr->msg_type_id == MSG_DATA ? 0 : 3);
+    on_process_metadata(dec);
+    break;
+  }
+
+  case MSG_AUDIO:
+  case MSG_VIDEO: {
+    if (!rtmp_source_ || !src_ownership_) {
+      throw std::runtime_error("cannot push rtmp Audio/Video");
+    }
+
+    // RtmpMediaSourceImp::onWrite
+    // RtmpDemuxer::inputRtmp
+    // AACRtmpDecoder::inputRtmp
+    // H264RtmpDecoder::inputRtmp
+    // RtmpMediaSource::onWrite
+
+    break;
+  }
+
   default:
+    spdlog::debug("cannot find handler for msg type {}", ptr->msg_type_id);
     break;
   }
 }
@@ -424,6 +447,7 @@ void rtmp_protocol::on_amf_publish(AMFDecoder &dec) {
         spdlog::warn("{} has been created, but lost", media_info_->info());
       }
 
+      // create a new rtmp media source and regist
       auto rtmp_src_ptr = rtmp_media_source::create(media_info_);
       src_ownership_ = rtmp_src_ptr->get_ownership();
       if (!src_ownership_) {
@@ -565,6 +589,71 @@ void rtmp_protocol::set_peer_bandwidth(uint32_t size) {
   std::string set_peer_bd((char *)&size, 4);
   set_peer_bd.push_back((char)0x02);
   send_rtmp(MSG_SET_PEER_BW, msg_stream_id_, set_peer_bd, 0, CHUNK_NETWORK);
+}
+
+/**
+duration     0
+fileSize     0
+width        1208
+height       720
+videocodecid 7
+videodatarate 2500
+framerate    30
+audiocodecid 10
+audiodatarate 160
+audiosamplerate 48000
+audiosamplesize 16
+audiochannels   2
+
+stereo       true
+2.1          false
+3.1          false
+4.0/4.1/5.1/7.1
+
+encoder "obs-output"
+
+*/
+void rtmp_protocol::on_process_metadata(AMFDecoder &dec) {
+  std::string type = dec.load<std::string>();
+  // for obs
+  if (type == "@setDataFrame") {
+    // the first one is string
+    type = dec.load<std::string>();
+    if (type == "onMetaData") {
+      dec.data().consume(5);
+      std::string key;
+      std::any value;
+
+      while (true) {
+        key = dec.load_key();
+        if (key.empty()) {
+          break;
+        }
+
+        uint8_t value_type = dec.peek_front();
+        if (value_type == AMF0Type::AMF_NUMBER) {
+          value = dec.load<double>();
+        } else if (value_type == AMF0Type::AMF_BOOLEAN) {
+          value = dec.load<bool>();
+        } else if (value_type == AMF0Type::AMF_STRING) {
+          value = dec.load<std::string>();
+        }
+
+        meta_data_.emplace(key, value);
+      }
+
+      if (dec.pop_front() != AMF0Type::AMF_OBJECT_END) {
+        throw std::runtime_error("expected an object end");
+      }
+    }
+  }
+
+  if (!rtmp_source_) {
+    throw std::runtime_error("cannot send rtmp meta data before publish cmd");
+  }
+
+  // load tracks
+  rtmp_source_->init_tracks(meta_data_);
 }
 
 } // namespace rtmp

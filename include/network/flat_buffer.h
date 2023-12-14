@@ -171,7 +171,7 @@ public:
     }
 
     uint32_t x = 0;
-    std::memcpy(&x, data(), sizeof x);
+    std::memcpy(&x, data(), sizeof(x));
     return ntohl(x);
   }
 
