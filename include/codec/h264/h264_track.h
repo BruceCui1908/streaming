@@ -1,7 +1,7 @@
 #pragma once
 
 #include "codec/track.h"
-
+#include <string>
 namespace codec {
 
 class h264_track : public video_track {
@@ -17,6 +17,8 @@ private:
   int height_{0};
   int width_{0};
   double fps_{0.0};
+  std::string sps_;
+  std::string pps_;
 };
 
 } // namespace codec

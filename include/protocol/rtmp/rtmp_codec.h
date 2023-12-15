@@ -12,6 +12,8 @@ public:
 
   virtual void input_rtmp(const rtmp_packet::ptr &);
 
+  const codec::track::ptr &get_track() const { return track_; }
+
 private:
   codec::track::ptr track_;
 };
