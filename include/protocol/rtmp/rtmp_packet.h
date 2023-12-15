@@ -64,6 +64,80 @@ struct rtmp_header {
 
 #pragma pack(pop)
 
+// enhanced-rtmp.pdf P5
+enum class rtmp_av_frame_type : uint8_t {
+  reserved = 0,
+  key_frame = 1,              // key frame (for AVC, a seekable frame)
+  inter_frame = 2,            // inter frame (for AVC, a non-seekable frame)
+  disposable_inter_frame = 3, // disposable inter frame (H.263 only)
+  generated_key_frame = 4, // generated key frame (reserved for server use only)
+  video_info_frame = 5,    // video info/command frame
+};
+
+enum class rtmp_h264_packet_type : uint8_t {
+  h264_config_header = 0, // AVC or HEVC sequence header(sps/pps)
+  h264_nalu = 1,          // AVC or HEVC NALU
+  h264_end_seq = 2, // AVC or HEVC end of sequence (lower level NALU sequence
+                    // ender is not REQUIRED or supported)
+};
+
+#define MKBETAG(a, b, c, d)                                                    \
+  ((d) | ((c) << 8) | ((b) << 16) | ((unsigned)(a) << 24))
+
+// enhanced-rtmp.pdf P7
+enum class rtmp_video_codec : uint32_t {
+  h263 = 2,          // Sorenson H.263
+  screen_video = 3,  // Screen video
+  vp6 = 4,           // On2 VP6
+  vp6_alpha = 5,     // On2 VP6 with alpha channel
+  screen_video2 = 6, // Screen video version 2
+  h264 = 7,          // avc
+  h265 = 12,         // 国内扩展
+
+  fourcc_vp9 = MKBETAG('v', 'p', '0', '9'),
+  fourcc_av1 = MKBETAG('a', 'v', '0', '1'),
+  fourcc_hevc = MKBETAG('h', 'v', 'c', '1')
+};
+
+// video_file_format_spec_v10_1.pdf P76
+enum class rtmp_aac_packet_type : uint8_t {
+  aac_config_header = 0, // AAC sequence header
+  aac_raw = 1,           // AAC raw
+};
+
+enum class rtmp_audio_codec : uint8_t {
+  /**
+  0 = Linear PCM, platform endian
+  1 = ADPCM
+  2 = MP3
+  3 = Linear PCM, little endian
+  4 = Nellymoser 16 kHz mono
+  5 = Nellymoser 8 kHz mono
+  6 = Nellymoser
+  7 = G.711 A-law logarithmic PCM
+  8 = G.711 mu-law logarithmic PCM
+  9 = reserved
+  10 = AAC
+  11 = Speex
+  14 = MP3 8 kHz
+  15 = Device-specific sound
+   */
+  g711a = 7,
+  g711u = 8,
+  aac = 10,
+  opus = 13 // 国内扩展
+};
+
+// enhanced-rtmp.pdf P8
+enum class rtmp_av_ext_packet_type : uint8_t {
+  PacketTypeSequenceStart = 0,
+  PacketTypeCodedFrames = 1,
+  PacketTypeSequenceEnd = 2,
+  PacketTypeCodedFramesX = 3,
+  PacketTypeMetadata = 4,
+  PacketTypeMPEG2TSSequenceStart = 5,
+};
+
 class rtmp_packet : public std::enable_shared_from_this<rtmp_packet> {
 public:
   using ptr = std::shared_ptr<rtmp_packet>;
@@ -85,6 +159,12 @@ public:
   rtmp_packet &operator=(rtmp_packet &&) = delete;
 
   rtmp_packet &restore_context(const rtmp_packet &);
+
+  bool is_video_keyframe() const;
+
+  bool is_config_frame() const;
+
+  int get_codec_id() const;
 
 public:
   static ptr create();

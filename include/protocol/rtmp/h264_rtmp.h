@@ -9,6 +9,8 @@ public:
   using ptr = std::shared_ptr<h264_rtmp_decoder>;
 
   h264_rtmp_decoder(const codec::track::ptr &ptr) : rtmp_codec(ptr) {}
+
+  void input_rtmp(const rtmp_packet::ptr &) override;
 };
 
 } // namespace rtmp

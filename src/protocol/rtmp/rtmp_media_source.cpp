@@ -22,6 +22,9 @@ void rtmp_media_source::init_tracks(
 
 // process rtmp audio/video packet
 void rtmp_media_source::process_av_packet(rtmp_packet::ptr pkt) {
+  // using
+  demuxer_->input_rtmp(pkt);
+
   // if (!pkt || pkt->msg_type_id != MSG_AUDIO || pkt->msg_type_id != MSG_VIDEO)
   // {
   //   throw std::runtime_error("rtmp packet must be either video or audio");

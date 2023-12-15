@@ -324,11 +324,7 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
       throw std::runtime_error("cannot push rtmp Audio/Video");
     }
 
-    // RtmpMediaSourceImp::onWrite
-    // RtmpDemuxer::inputRtmp
-    // AACRtmpDecoder::inputRtmp
-    // H264RtmpDecoder::inputRtmp
-    // RtmpMediaSource::onWrite
+    rtmp_source_->process_av_packet(std::move(ptr));
 
     break;
   }
@@ -592,6 +588,7 @@ void rtmp_protocol::set_peer_bandwidth(uint32_t size) {
 }
 
 /**
+enhanced-rtmp.pdf P6
 duration     0
 fileSize     0
 width        1208
