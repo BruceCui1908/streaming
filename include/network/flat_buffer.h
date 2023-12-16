@@ -104,6 +104,14 @@ public:
     return write_index_ - read_index_;
   }
 
+  void ensure_length(size_t size) {
+    if (size > unread_length()) {
+      throw std::runtime_error(
+          fmt::format("flat_buffer does not contain the required length {}, {}",
+                      size, info()));
+    }
+  }
+
   size_t capacity() const { return capacity_; }
 
   size_t writable_bytes() const {

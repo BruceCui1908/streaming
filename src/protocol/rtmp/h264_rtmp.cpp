@@ -5,15 +5,13 @@
 namespace rtmp {
 
 /// @brief If the packet is a configuration frame, it is then passed to the
-/// H.264 track to extract the SPS/PPS. Otherwise, if the packet is not a
-/// configuration frame, it is split and then passed to the H.264 track for
-/// further processing
+/// H.264 track to extract the SPS/PPS. Otherwise, it is split and then passed
+/// to the H.264 track for further processing
 /// @param pkt
 void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
+
   // tag header(1 byte) + packet type(1 byte) + composition time(3 bytes)
-  if (pkt->buffer.unread_length() <= 5) {
-    throw std::runtime_error("not enough data to process h264 config frame");
-  }
+  pkt->buffer.ensure_length(5);
 
   // if the frame is sps/pps
   if (pkt->is_config_frame()) {
@@ -45,15 +43,15 @@ void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
       0xff800000;
   uint32_t pts = pkt->time_stamp + cts;
   pkt->buffer.consume(3);
-  split_frame(pkt->buffer, pkt->time_stamp, pts);
+  split_nal_frame(pkt->buffer, pkt->time_stamp, pts);
 }
 
 /// @brief split rtmp frame by frame length, not prefix
-void h264_rtmp_decoder::split_frame(network::flat_buffer &buf, uint32_t dts,
-                                    uint32_t pts) {
+void h264_rtmp_decoder::split_nal_frame(network::flat_buffer &buf, uint32_t dts,
+                                        uint32_t pts) {
   const auto track_ptr = get_track();
 
-  while (buf.unread_length() > 4) {
+  while (buf.unread_length() >= 4) {
     auto frame_len = buf.read_uint32();
     if (frame_len > buf.unread_length()) {
       break;

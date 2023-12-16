@@ -34,7 +34,8 @@ rtmp_packet &rtmp_packet::restore_context(const rtmp_packet &other) {
   return *this;
 }
 
-// https://www.jianshu.com/p/cc813ba41caa
+// https://www.jianshu.com/p/cc813ba41caa  based on the first byte which is
+// FlvVideoTagHeader
 bool rtmp_packet::is_video_keyframe() const {
   if (msg_type_id != MSG_VIDEO) {
     return false;
@@ -44,10 +45,10 @@ bool rtmp_packet::is_video_keyframe() const {
   uint8_t flv_tag_header = buffer.peek_uint8();
   rtmp_av_frame_type frame_type;
   if ((flv_tag_header >> 4) & 0b1000) {
-    // IsExHeader = true spec after 2023
+    // if the first bit is 1, then IsExHeader = true
     frame_type = (rtmp_av_frame_type)((flv_tag_header >> 4) & 0b0111);
   } else {
-    // IsExHeader = true
+    // IsExHeader = false
     frame_type = (rtmp_av_frame_type)(flv_tag_header >> 4);
   }
 
@@ -90,12 +91,9 @@ bool rtmp_packet::is_config_frame() const {
   }
 
   if (msg_type_id == MSG_AUDIO) {
-    if (buffer.unread_length() < 2) {
-      throw std::runtime_error(
-          "not enough data to parse rtmp video tag header");
-    }
-
+    buffer.ensure_length(2);
     int codec_id = get_codec_id();
+
     return (rtmp_audio_codec)(codec_id) == rtmp_audio_codec::aac &&
            (rtmp_aac_packet_type)(buffer.data()[1]) ==
                rtmp_aac_packet_type::aac_config_header;
@@ -108,10 +106,10 @@ int rtmp_packet::get_codec_id() const {
   uint8_t flv_tag_header = buffer.peek_uint8();
   switch (msg_type_id) {
   case MSG_VIDEO:
-    // use last 4 bits
+    // use lower 4 bits
     return (uint8_t)(flv_tag_header & 0x0F);
   case MSG_AUDIO:
-    // use first 4 bits
+    // use higher 4 bits
     return (uint8_t)(flv_tag_header >> 4);
   default:
     return -1;

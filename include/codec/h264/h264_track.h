@@ -18,6 +18,9 @@ public:
   void parse_config(network::flat_buffer &);
 
 private:
+  void extract_bitstream_sps();
+
+private:
   int height_{0};
   int width_{0};
   float fps_{0.0};
