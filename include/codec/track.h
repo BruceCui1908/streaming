@@ -1,13 +1,11 @@
 #pragma once
 
+#include "frame.h"
+#include "meta.h"
 #include <memory>
 
-namespace codec {
 
-typedef enum {
-  CodecH264 = 0,
-  CodecAAC = 1,
-} Codec_Type;
+namespace codec {
 
 class track {
 public:
@@ -21,6 +19,7 @@ public:
   const int bit_rate() const { return bit_rate_; }
 
   virtual Codec_Type get_codec() = 0;
+  virtual void input_frame(const frame::ptr &) = 0;
 
 private:
   int bit_rate_{0};

@@ -10,7 +10,7 @@ public:
 
   rtmp_codec(const codec::track::ptr &);
 
-  virtual void input_rtmp(const rtmp_packet::ptr &);
+  virtual void input_rtmp(rtmp_packet::ptr &);
 
   const codec::track::ptr &get_track() const { return track_; }
 

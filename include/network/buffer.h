@@ -83,15 +83,11 @@ public:
   ~buffer_raw() { clean(); }
 
   // copy constructor
-  buffer_raw(const buffer_raw &other) {
+  buffer_raw(const buffer_raw &other) : buffer_raw(other.get_capacity()) {
     // if data is valid, then copy
-    if (other.data()) {
-      size_t size = std::strlen(other.data()) + 1;
-      data_ = new char[size];
-      // copy the end byte
-      std::memcpy(data_, other.data(), size);
-      capacity_ = other.capacity_;
-      size_ = other.size_;
+    if (other.data() && other.size()) {
+      set_size(other.size());
+      std::memcpy(data_, other.data(), size_);
     }
   }
 
@@ -160,21 +156,13 @@ public:
   }
 
   void assign(const char *data, size_t size = 0) {
-    if (!data) {
-      size_ = 0;
-      capacity_ = 0;
-      data_ = nullptr;
+    if (!data || !size) {
+      clean();
       return;
     }
 
-    if (!size) {
-      size = std::strlen(data);
-    }
-
-    // allocate an extra byte for '\0'
-    set_capacity(size + 1);
+    set_capacity(size);
     std::memcpy(data_, data, size);
-    data_[size] = '\0';
     set_size(size);
   }
 

@@ -5,7 +5,6 @@
 #include "media/demuxer.h"
 #include "rtmp_packet.h"
 
-
 #include <any>
 #include <string>
 #include <unordered_map>
@@ -21,7 +20,7 @@ public:
   void init_audio_track(int codecid, int sample_rate, int channels,
                         int sample_bit, int bit_rate);
 
-  void input_rtmp(const rtmp_packet::ptr &);
+  void input_rtmp(rtmp_packet::ptr &);
 
 private:
   double duration_{0.0};

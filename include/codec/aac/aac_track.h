@@ -13,6 +13,9 @@ public:
   int get_audio_channel() override;
   Codec_Type get_codec() override;
 
+  // TODO
+  void input_frame(const frame::ptr &) override {}
+
 private:
   int channel_{0};
   int sample_rate_{0};

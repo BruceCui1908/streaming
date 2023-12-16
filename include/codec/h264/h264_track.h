@@ -13,6 +13,8 @@ public:
   double get_video_fps() const override;
   Codec_Type get_codec() override;
 
+  void input_frame(const frame::ptr &) override;
+
   void parse_config(network::flat_buffer &);
 
 private:

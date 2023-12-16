@@ -10,7 +10,10 @@ public:
 
   h264_rtmp_decoder(const codec::track::ptr &ptr) : rtmp_codec(ptr) {}
 
-  void input_rtmp(const rtmp_packet::ptr &) override;
+  void input_rtmp(rtmp_packet::ptr &) override;
+
+private:
+  void split_frame(network::flat_buffer &, uint32_t, uint32_t);
 };
 
 } // namespace rtmp

@@ -28,6 +28,10 @@ public:
 
   static constexpr size_t kInitialSize = 1024;
 
+  static ptr create(size_t initial_size = kInitialSize) {
+    return std::make_shared<flat_buffer>(initial_size);
+  }
+
   explicit flat_buffer(size_t initial_size = kInitialSize)
       : capacity_{initial_size} {
     read_index_ = write_index_ = 0;
@@ -120,7 +124,9 @@ public:
     if (len < unread_length()) {
       read_index_ += len;
     } else {
-      reset();
+      throw std::runtime_error(
+          fmt::format("flat_buffer cannot consume {} bytes, unread length = {}",
+                      len, unread_length()));
     }
   }
 

@@ -85,7 +85,7 @@ void rtmp_demuxer::init_video_track(int codecid, int bit_rate) {
   video_track_->set_bit_rate(bit_rate);
 }
 
-void rtmp_demuxer::input_rtmp(const rtmp_packet::ptr &pkt) {
+void rtmp_demuxer::input_rtmp(rtmp_packet::ptr &pkt) {
   switch (pkt->msg_type_id) {
   case MSG_VIDEO: {
     if (video_rtmp_decoder_) {

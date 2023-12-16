@@ -350,7 +350,7 @@ void rtmp_protocol::on_process_cmd(AMFDecoder &dec) {
 
   auto it = cmd_funcs.find(method);
   if (it == cmd_funcs.end()) {
-    // spdlog::debug("cannot find handler for method = {}", method);
+    spdlog::debug("cannot find handler for method = {}", method);
     return;
   }
 

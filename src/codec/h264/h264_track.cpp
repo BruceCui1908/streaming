@@ -73,4 +73,6 @@ void h264_track::parse_config(network::flat_buffer &buf) {
       width_, height_, fps_);
 }
 
+void h264_track::input_frame(const frame::ptr &ftr) {}
+
 } // namespace codec
