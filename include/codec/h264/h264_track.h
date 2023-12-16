@@ -1,7 +1,7 @@
 #pragma once
 
 #include "codec/track.h"
-#include <string>
+#include "network/flat_buffer.h"
 namespace codec {
 
 class h264_track : public video_track {
@@ -13,10 +13,12 @@ public:
   double get_video_fps() const override;
   Codec_Type get_codec() override;
 
+  void parse_config(network::flat_buffer &);
+
 private:
   int height_{0};
   int width_{0};
-  double fps_{0.0};
+  float fps_{0.0};
   std::string sps_;
   std::string pps_;
 };

@@ -1,4 +1,5 @@
 #include "h264_rtmp.h"
+#include "codec/h264/h264_track.h"
 
 namespace rtmp {
 void h264_rtmp_decoder::input_rtmp(const rtmp_packet::ptr &pkt) {
@@ -9,8 +10,26 @@ void h264_rtmp_decoder::input_rtmp(const rtmp_packet::ptr &pkt) {
       throw std::runtime_error("not enough data to process h264 config frame");
     }
 
-    // TODO parse sps pps
+    pkt->buffer.consume(5);
+
+    const auto track_ptr = get_track();
+    if (!track_ptr) {
+      throw std::runtime_error("The video track must be attached to the "
+                               "h264_rtmp_decoder prior to processing RTMP");
+    }
+
+    auto h264_track_ptr =
+        std::dynamic_pointer_cast<codec::h264_track>(track_ptr);
+    if (!h264_track_ptr) {
+      throw std::runtime_error(
+          "The video track cannot be cast to h264 track in h264_rtmp_decoder");
+    }
+
+    h264_track_ptr->parse_config(pkt->buffer);
+    return;
   }
+
+  // if not pps/sps
 
   // TODO
 }

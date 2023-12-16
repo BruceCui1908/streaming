@@ -350,7 +350,7 @@ void rtmp_protocol::on_process_cmd(AMFDecoder &dec) {
 
   auto it = cmd_funcs.find(method);
   if (it == cmd_funcs.end()) {
-    spdlog::debug("cannot find handler for method = {}", method);
+    // spdlog::debug("cannot find handler for method = {}", method);
     return;
   }
 
@@ -385,9 +385,9 @@ the connect command.
 void rtmp_protocol::on_amf_connect(AMFDecoder &dec) {
 
   auto params = dec.load_object();
-  for (auto &it : params.get_map()) {
-    spdlog::debug("key = {}, value = {}", it.first, it.second.as_string());
-  }
+  // for (auto &it : params.get_map()) {
+  //   spdlog::debug("key = {}, value = {}", it.first, it.second.as_string());
+  // }
 
   media_info_ = media::media_info::create("RTMP");
   media_info_->set_app(params["app"].as_string());

@@ -92,6 +92,7 @@ public:
   }
 
   const char *data() const { return data_ + read_index_; }
+  char *data() { return data_ + read_index_; }
 
   // length returns the number of bytes of the unread portion of the buffer
   size_t unread_length() const {
