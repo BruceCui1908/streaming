@@ -243,7 +243,7 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
     }
 
     auto remain_msg_len =
-        chunk_data.msg_length - chunk_data.buffer.unread_length();
+        chunk_data.msg_length - chunk_data.buf_.unread_length();
     auto more = std::min(chunk_size_in_, (size_t)(remain_msg_len));
 
     if (size < header_length + offset + more) {
@@ -251,14 +251,22 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
     }
 
     if (more) {
-      chunk_data.buffer.write(ptr + header_length + offset, more);
+      chunk_data.buf_.write(ptr + header_length + offset, more);
     }
 
     ptr += header_length + offset + more;
     size -= header_length + offset + more;
+    chunk_data.set_header_len(header_length + offset);
+
+    // check if meets the received threshold
+    bytes_recv_ += static_cast<uint32_t>(chunk_data.size());
+    if (windows_size_ > 0 && bytes_recv_ - bytes_recv_last_ >= windows_size_) {
+      send_acknowledgement(bytes_recv_ - bytes_recv_last_);
+      bytes_recv_last_ = bytes_recv_;
+    }
 
     // if the frame is ready, then sent to handle chunk
-    if (chunk_data.msg_length == chunk_data.buffer.unread_length()) {
+    if (chunk_data.msg_length == chunk_data.buf_.unread_length()) {
       msg_stream_id_ = chunk_data.msg_stream_id;
       chunk_data.time_stamp =
           time_stamp + (chunk_data.is_abs_stamp ? 0 : chunk_data.time_stamp);
@@ -284,10 +292,10 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
 
   switch (ptr->msg_type_id) {
   case MSG_SET_CHUNK: {
-    if (ptr->buffer.unread_length() < 4) {
+    if (ptr->buf_.unread_length() < 4) {
       throw std::runtime_error("MSG_SET_CHUNK not enough data");
     }
-    chunk_size_in_ = util::load_be32(ptr->buffer.data());
+    chunk_size_in_ = util::load_be32(ptr->buf_.data());
     spdlog::debug("received MSG_SET_CHUNK {}", chunk_size_in_);
     break;
   }
@@ -297,7 +305,7 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
     // receiving bytes equal to the window size. The window size is the maximum
     // number of bytes that the sender sends without receiving acknowledgment
     // from the receiver
-    if (ptr->buffer.unread_length() < 4) {
+    if (ptr->buf_.unread_length() < 4) {
       throw std::runtime_error("MSG_ACK not enough data");
     }
     spdlog::debug("received MSG_ACK");
@@ -306,14 +314,14 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
 
   case MSG_CMD:
   case MSG_CMD3: {
-    AMFDecoder dec(ptr->buffer, ptr->msg_type_id == MSG_CMD ? 0 : 3);
+    AMFDecoder dec(ptr->buf_, ptr->msg_type_id == MSG_CMD ? 0 : 3);
     on_process_cmd(dec);
     break;
   }
 
   case MSG_DATA:
   case MSG_DATA3: {
-    AMFDecoder dec(ptr->buffer, ptr->msg_type_id == MSG_DATA ? 0 : 3);
+    AMFDecoder dec(ptr->buf_, ptr->msg_type_id == MSG_DATA ? 0 : 3);
     on_process_metadata(dec);
     break;
   }
@@ -325,7 +333,6 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
     }
 
     rtmp_source_->process_av_packet(std::move(ptr));
-
     break;
   }
 
@@ -562,8 +569,8 @@ void rtmp_protocol::send_rtmp(uint8_t msg_type_id, uint32_t msg_stream_id,
 
   bytes_sent_ += static_cast<uint32_t>(total_size);
   if (windows_size_ > 0 && bytes_sent_ - bytes_sent_last_ >= windows_size_) {
-    bytes_sent_last_ = bytes_sent_;
     send_acknowledgement(bytes_sent_);
+    bytes_sent_last_ = bytes_sent_;
   }
 }
 

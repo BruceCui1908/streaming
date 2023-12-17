@@ -4,7 +4,6 @@
 #include "meta.h"
 #include <memory>
 
-
 namespace codec {
 
 class track {

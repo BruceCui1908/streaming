@@ -11,11 +11,12 @@ namespace rtmp {
 void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
 
   // tag header(1 byte) + packet type(1 byte) + composition time(3 bytes)
-  pkt->buffer.ensure_length(5);
+  pkt->buf_.ensure_length(5);
+  pkt->buf_.capture_snapshot();
 
   // if the frame is sps/pps
   if (pkt->is_config_frame()) {
-    pkt->buffer.consume(5);
+    pkt->buf_.consume(5);
     const auto track_ptr = get_track();
     if (!track_ptr) {
       throw std::runtime_error("The video track must be attached to the "
@@ -29,21 +30,22 @@ void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
           "The video track cannot be cast to h264 track in h264_rtmp_decoder");
     }
 
-    h264_track_ptr->parse_config(pkt->buffer);
+    h264_track_ptr->parse_config(pkt->buf_);
+    pkt->buf_.restore_snapshot();
     return;
   }
 
   // if not pps/sps, skip tag header(1 byte) and packet type(1 byte)
-  pkt->buffer.consume(2);
+  pkt->buf_.consume(2);
 
   // https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/flvdec.c 1293
-  uint8_t *cts_ptr = (uint8_t *)(pkt->buffer.data());
+  uint8_t *cts_ptr = (uint8_t *)(pkt->buf_.data());
   int32_t cts =
       (((cts_ptr[0] << 16) | (cts_ptr[1] << 8) | (cts_ptr[2])) + 0xff800000) ^
       0xff800000;
   uint32_t pts = pkt->time_stamp + cts;
-  pkt->buffer.consume(3);
-  split_nal_frame(pkt->buffer, pkt->time_stamp, pts);
+  pkt->buf_.consume(3);
+  split_nal_frame(pkt->buf_, pkt->time_stamp, pts);
 }
 
 /// @brief split rtmp frame by frame length, not prefix

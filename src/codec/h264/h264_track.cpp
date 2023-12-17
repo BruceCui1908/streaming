@@ -68,6 +68,8 @@ void h264_track::parse_config(network::flat_buffer &buf) {
   extract_bitstream_sps();
 }
 
-void h264_track::input_frame(const frame::ptr &ftr) {}
+void h264_track::input_frame(const frame::ptr &ftr) {
+  // TODO
+}
 
 } // namespace codec

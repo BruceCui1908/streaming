@@ -6,4 +6,10 @@ typedef enum {
   CodecH264 = 0,
   CodecAAC = 1,
 } Codec_Type;
-}
+
+typedef enum {
+  Audio = 0,
+  Video = 1,
+  Max,
+} Track_Type;
+} // namespace codec

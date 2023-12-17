@@ -104,11 +104,11 @@ public:
     return write_index_ - read_index_;
   }
 
-  void ensure_length(size_t size) {
-    if (size > unread_length()) {
+  void ensure_length(size_t len) const {
+    if (len > unread_length()) {
       throw std::runtime_error(
-          fmt::format("flat_buffer does not contain the required length {}, {}",
-                      size, info()));
+          fmt::format("flat_buffer {} does not contain the required length {}",
+                      unread_length(), len));
     }
   }
 
@@ -225,6 +225,18 @@ public:
     return s;
   }
 
+  void capture_snapshot() {
+    capacity_temp_ = capacity_;
+    read_index_temp_ = read_index_;
+    write_index_temp_ = write_index_;
+  }
+
+  void restore_snapshot() {
+    capacity_ = capacity_temp_;
+    read_index_ = read_index_temp_;
+    write_index_ = write_index_temp_;
+  }
+
   void dump() {
     if (!data()) {
       std::cout << "null data" << std::endl;
@@ -296,6 +308,10 @@ private:
   size_t capacity_;
   size_t read_index_;
   size_t write_index_;
+
+  size_t capacity_temp_{0};
+  size_t read_index_temp_{0};
+  size_t write_index_temp_{0};
 };
 
 } // namespace network

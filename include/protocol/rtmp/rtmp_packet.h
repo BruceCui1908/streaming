@@ -142,6 +142,8 @@ class rtmp_packet : public std::enable_shared_from_this<rtmp_packet> {
 public:
   using ptr = std::shared_ptr<rtmp_packet>;
 
+  static ptr create();
+
   bool is_abs_stamp{false};
   uint32_t chunk_stream_id;
   uint32_t msg_stream_id;
@@ -150,7 +152,7 @@ public:
   uint32_t ts_delta;
   uint32_t time_stamp;
 
-  network::flat_buffer buffer;
+  network::flat_buffer buf_;
 
   ~rtmp_packet() = default;
   rtmp_packet(const rtmp_packet &) = delete;
@@ -166,11 +168,15 @@ public:
 
   int get_codec_id() const;
 
-public:
-  static ptr create();
+  void set_header_len(size_t);
+
+  size_t size();
 
 private:
   rtmp_packet() = default;
+
+private:
+  size_t header_length_{0};
 };
 
 } // namespace rtmp

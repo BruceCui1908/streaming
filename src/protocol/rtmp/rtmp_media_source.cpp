@@ -22,20 +22,31 @@ void rtmp_media_source::init_tracks(
 
 // process rtmp audio/video packet
 void rtmp_media_source::process_av_packet(rtmp_packet::ptr pkt) {
-  // using
+  if (!pkt || pkt->msg_type_id != MSG_AUDIO || pkt->msg_type_id != MSG_VIDEO) {
+    throw std::runtime_error("rtmp packet must be either video or audio");
+  }
+
+  // parsed by demuxer
   demuxer_->input_rtmp(pkt);
 
-  // if (!pkt || pkt->msg_type_id != MSG_AUDIO || pkt->msg_type_id != MSG_VIDEO)
-  // {
-  //   throw std::runtime_error("rtmp packet must be either video or audio");
-  // }
+  // update speed
+  bool is_video = pkt->msg_type_id == MSG_VIDEO;
+  speed_[is_video ? codec::Track_Type::Video : codec::Track_Type::Audio] +=
+      pkt->size();
 
-  // // update timestamp for audio/video tracks
-  // Track_Type type =
-  //     pkt->msg_type_id == MSG_AUDIO ? Track_Type::Audio : Track_Type::Video;
-  // track_stamps_[type] = pkt->time_stamp;
+  // update timestamp for audio/video tracks
+  track_stamps_[is_video ? codec::Track_Type::Video
+                         : codec::Track_Type::Audio] = pkt->time_stamp;
 
-  // TODO
+  // if the frame is pps, then store into the config map
+  if (pkt->is_config_frame()) {
+    {
+      std::scoped_lock lock(config_mtx_);
+      config_frame_map_[pkt->msg_type_id] = pkt;
+    }
+  }
+
+  // TODO add packet dispatcher
 }
 
 } // namespace rtmp

@@ -3,12 +3,11 @@
 #include "media/media_source.h"
 #include "rtmp_demuxer.h"
 
-namespace rtmp {
+#include <mutex>
+#include <unordered_map>
 
-typedef enum {
-  Audio = 0,
-  Video = 1,
-} Track_Type;
+
+namespace rtmp {
 
 class rtmp_media_source : public media::media_source {
 public:
@@ -26,6 +25,10 @@ private:
   // timestamps for audio/video
   uint32_t track_stamps_[2] = {0};
   rtmp_demuxer::ptr demuxer_;
+
+  mutable std::recursive_mutex config_mtx_;
+  std::unordered_map<int /* msg type id*/, rtmp_packet::ptr>
+      config_frame_map_{};
 };
 
 } // namespace rtmp

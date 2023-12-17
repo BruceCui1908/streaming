@@ -2,6 +2,9 @@
 
 #include "media_info.h"
 
+#include "codec/meta.h"
+#include "util/timer.h"
+
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -34,11 +37,15 @@ public:
 protected:
   media_source(const media_info::ptr &);
 
+  int get_bytes_speed(codec::Track_Type);
+
 private:
   void unregist();
 
 protected:
   media_info::ptr media_info_;
+
+  util::bytes_speed speed_[codec::Track_Type::Max];
 
 private:
   std::atomic_flag owned_{false};
