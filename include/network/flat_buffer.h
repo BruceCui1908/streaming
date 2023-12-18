@@ -1,26 +1,20 @@
 #pragma once
 
+#include <arpa/inet.h>
+
 #include <bitset>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
 
-#include <arpa/inet.h>
-#include <iostream>
 #include <spdlog/spdlog.h>
-#include <sstream>
 
 namespace network {
-
-/*
-   Memory is laid out thusly:
-
-data_[0] --- read_index_ --- write_index_ ---
-capacity_
-*/
 
 class flat_buffer {
 public:
@@ -65,6 +59,7 @@ public:
       data_ = new char[capacity_];
       std::memcpy(data_, other.data_, capacity_);
     }
+
     return *this;
   }
 
@@ -90,60 +85,20 @@ public:
     return *this;
   }
 
-  void info() {
+  void print() {
     spdlog::info("read_index = {}, write_index = {}, capacity = {}",
                  read_index_, write_index_, capacity_);
   }
 
   const char *data() const { return data_ + read_index_; }
   char *data() { return data_ + read_index_; }
+  char *write_begin() { return begin() + write_index_; }
+  const char *write_begin() const { return begin() + write_index_; }
 
   // length returns the number of bytes of the unread portion of the buffer
   size_t unread_length() const {
     assert(write_index_ >= read_index_);
     return write_index_ - read_index_;
-  }
-
-  void must_have_length(size_t len) const {
-    if (len > unread_length()) {
-      throw std::runtime_error(
-          fmt::format("flat_buffer {} does not contain the required length {}",
-                      unread_length(), len));
-    }
-  }
-
-  // for session do_read()
-  size_t session_read_length(size_t n) {
-    static constexpr size_t kMaxCacheSize = 4 * 1024 * 1024;
-
-    if (writable_bytes() >= n) {
-      // if buffer has enough space for the next read for session
-      return n;
-    }
-
-    move_unread_to_left();
-
-    if (writable_bytes() >= n) {
-      return n;
-    }
-
-    if (capacity() > kMaxCacheSize) {
-      throw std::runtime_error("session read buffer has reached limit, client "
-                               "is sending too much data");
-    }
-
-    // ensure read for this time
-    grow(n);
-
-    return n;
-  }
-
-  void session_move_write_index(size_t n) {
-    if (n > writable_bytes()) {
-      throw std::runtime_error("session write_index is out of range");
-    }
-
-    write_index_ += n;
   }
 
   size_t capacity() const { return capacity_; }
@@ -153,8 +108,13 @@ public:
     return capacity_ - write_index_;
   }
 
-  char *write_begin() { return begin() + write_index_; }
-  const char *write_begin() const { return begin() + write_index_; }
+  void require_length_or_fail(size_t len) const {
+    if (len > unread_length()) {
+      throw std::runtime_error(
+          fmt::format("flat_buffer {} does not contain the required length {}",
+                      unread_length(), len));
+    }
+  }
 
   void write(const char *data, size_t size) {
     ensure_writable_bytes(size);
@@ -162,7 +122,7 @@ public:
     write_index_ += size;
   }
 
-  void consume(size_t len) {
+  void consume_or_fail(size_t len) {
     if (len <= unread_length()) {
       read_index_ += len;
     } else {
@@ -202,7 +162,7 @@ public:
 
   uint8_t read_uint8() {
     uint8_t x = peek_uint8();
-    consume(sizeof(x));
+    consume_or_fail(sizeof(x));
     return x;
   }
 
@@ -218,7 +178,7 @@ public:
 
   uint16_t read_uint16() {
     uint16_t x = peek_uint16();
-    consume(sizeof(x));
+    consume_or_fail(sizeof(x));
     return x;
   }
 
@@ -234,7 +194,7 @@ public:
 
   uint32_t read_uint32() {
     uint32_t x = peek_uint32();
-    consume(sizeof(x));
+    consume_or_fail(sizeof(x));
     return x;
   }
 
@@ -244,7 +204,7 @@ public:
     }
 
     uint32_t first = peek_uint32();
-    consume(sizeof(uint32_t));
+    consume_or_fail(sizeof(uint32_t));
     uint32_t second = peek_uint32();
     unread_bytes(sizeof(uint32_t));
 
@@ -253,7 +213,7 @@ public:
 
   uint64_t read_uint64() {
     uint64_t x = peek_uint64();
-    consume(sizeof(x));
+    consume_or_fail(sizeof(x));
     return x;
   }
 
@@ -263,7 +223,7 @@ public:
     }
 
     std::string s(data(), len);
-    consume(len);
+    consume_or_fail(len);
     return s;
   }
 
@@ -308,6 +268,40 @@ public:
     std::cout << ss.str() << std::endl;
   }
 
+  // for session do_read()
+  size_t socket_read_length(size_t n) {
+    static constexpr size_t kMaxCacheSize = 4 * 1024 * 1024;
+
+    if (writable_bytes() >= n) {
+      // if buffer has enough space for the next read for session
+      return n;
+    }
+
+    move_unread_to_begin();
+
+    if (writable_bytes() >= n) {
+      return n;
+    }
+
+    if (capacity() > kMaxCacheSize) {
+      throw std::runtime_error("session read buffer has reached limit, client "
+                               "is sending too much data");
+    }
+
+    // ensure read for this time
+    grow(n);
+
+    return n;
+  }
+
+  void socket_consume(size_t n) {
+    if (n > writable_bytes()) {
+      throw std::runtime_error("session write_index is out of range");
+    }
+
+    write_index_ += n;
+  }
+
 private:
   char *begin() { return data_; }
   const char *begin() const { return data_; }
@@ -324,12 +318,12 @@ private:
     if (available_bytes < len) {
       // grow the capacity
       size_t capacity = (capacity_ << 1) + len;
-      size_t unconsumed_data_length = unread_length();
+      size_t unconsumed_length = unread_length();
       char *temp = new char[capacity];
       // copy the data that hasn't been consumed
-      std::memcpy(temp, begin() + read_index_, unconsumed_data_length);
+      std::memcpy(temp, begin() + read_index_, unconsumed_length);
       read_index_ = 0;
-      write_index_ = unconsumed_data_length;
+      write_index_ = unconsumed_length;
       capacity_ = capacity;
       if (data_) {
         delete[] data_;
@@ -337,16 +331,16 @@ private:
       }
       data_ = temp;
     } else {
-      move_unread_to_left();
+      move_unread_to_begin();
     }
   }
 
-  void move_unread_to_left() {
-    // move readable data to the front, make space inside buffer
-    size_t unconsumed_data_length = unread_length();
-    std::memmove(begin(), begin() + read_index_, unconsumed_data_length);
+  void move_unread_to_begin() {
+    // move unread data to the front, make space inside buffer
+    size_t unconsumed_length = unread_length();
+    std::memmove(begin(), begin() + read_index_, unconsumed_length);
     read_index_ = 0;
-    write_index_ = unconsumed_data_length;
+    write_index_ = unconsumed_length;
   }
 
 private:

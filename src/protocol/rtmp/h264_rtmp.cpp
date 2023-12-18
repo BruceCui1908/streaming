@@ -11,11 +11,11 @@ namespace rtmp {
 void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
 
   // tag header(1 byte) + packet type(1 byte) + composition time(3 bytes)
-  pkt->buf_.must_have_length(5);
+  pkt->buf_.require_length_or_fail(5);
 
   // if the frame is sps/pps
   if (pkt->is_config_frame()) {
-    pkt->buf_.consume(5);
+    pkt->buf_.consume_or_fail(5);
     const auto track_ptr = get_track();
     if (!track_ptr) {
       throw std::runtime_error("The video track must be attached to the "
@@ -34,7 +34,7 @@ void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
   }
 
   // if not pps/sps, skip tag header(1 byte) and packet type(1 byte)
-  pkt->buf_.consume(2);
+  pkt->buf_.consume_or_fail(2);
 
   // https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/flvdec.c 1293
   uint8_t *cts_ptr = (uint8_t *)(pkt->buf_.data());
@@ -42,7 +42,7 @@ void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
       (((cts_ptr[0] << 16) | (cts_ptr[1] << 8) | (cts_ptr[2])) + 0xff800000) ^
       0xff800000;
   uint32_t pts = pkt->time_stamp + cts;
-  pkt->buf_.consume(3);
+  pkt->buf_.consume_or_fail(3);
   split_nal_frame(pkt->buf_, pkt->time_stamp, pts);
 }
 
@@ -60,7 +60,7 @@ void h264_rtmp_decoder::split_nal_frame(network::flat_buffer &buf, uint32_t dts,
     auto ptr = network::flat_buffer::create();
     ptr->write("\x00\x00\x00\x01", 4);
     ptr->write(buf.data(), frame_len);
-    buf.consume(frame_len);
+    buf.consume_or_fail(frame_len);
 
     auto frame_ptr = codec::h264_frame::create();
     frame_ptr->set_prefix_size(4);

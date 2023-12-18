@@ -3,6 +3,7 @@
 #include "network/session.h"
 #include "rtmp_protocol.h"
 #include "util/timer.h"
+
 namespace rtmp {
 
 #define RTMP_CONSTRUCTOR_PARAMS SESSION_CONSTRUCTOR_PARAMS
@@ -15,11 +16,8 @@ public:
 
   ~rtmp_session() override = default;
 
-  // from session
   void start() override;
-  void stop() override;
 
-  // from rtmp_protocol
   void send(const char *, size_t, bool is_async = false,
             bool is_close = false) override;
 

@@ -3,7 +3,6 @@
 #include "media/media_source.h"
 #include "util/util.h"
 #include <algorithm>
-#include <spdlog/spdlog.h>
 
 namespace rtmp {
 static constexpr size_t C1_HANDSHAKE_SIZE = 1536;
@@ -597,7 +596,7 @@ void rtmp_protocol::on_process_metadata(AMFDecoder &dec) {
     // the first one is string
     type = dec.load<std::string>();
     if (type == "onMetaData") {
-      dec.data().consume(5);
+      dec.data().consume_or_fail(5);
       std::string key;
       std::any value;
 

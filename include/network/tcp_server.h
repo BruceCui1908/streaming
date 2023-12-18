@@ -33,7 +33,7 @@ public:
       }
 
       auto session_ptr = SessionProtocol::create(
-          std::move(sock), session_manager_->generate_session_prefix(),
+          std::move(sock), session_manager_->generate_prefix(),
           session_manager_);
       session_manager_->add(session_ptr);
       spdlog::debug("{} created!", session_ptr->id());

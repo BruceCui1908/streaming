@@ -1,10 +1,8 @@
 #include "session.h"
 
-#include <spdlog/spdlog.h>
-
 namespace network {
 
-// session impl
+// session
 session::session(SESSION_CONSTRUCTOR_PARAMS)
     : socket_{std::move(sock)}, session_prefix_{session_prefix},
       raw_fd_{socket_.native_handle()}, session_manager_{manager} {}
@@ -27,7 +25,7 @@ void session::do_read() {
   std::weak_ptr<session> weak_self = shared_from_this();
   socket_.async_read_some(
       boost::asio::buffer(buffer_.write_begin(),
-                          buffer_.session_read_length(MAX_READ_SIZE)),
+                          buffer_.socket_read_length(SOCKET_READ_SIZE)),
       [this, weak_self](boost::system::error_code ec,
                         size_t bytes_transferred) {
         auto strong_self = weak_self.lock();
@@ -52,7 +50,7 @@ void session::do_read() {
           }
         }
 
-        buffer_.session_move_write_index(bytes_transferred);
+        buffer_.socket_consume(bytes_transferred);
 
         // spdlog::debug("do_read() reads {} bytes, buffer has unread {} bytes",
         //               bytes_transferred, buffer_.unread_length());
@@ -125,7 +123,6 @@ void session::do_write(const char *data, size_t size, bool is_async,
   }
 }
 
-// close the socket
 void session::stop() {
   if (socket_.is_open()) {
     socket_.close();
@@ -151,7 +148,7 @@ session_manager::~session_manager() {
 session_manager::session_manager(std::string session_prefix)
     : session_prefix_{std::move(session_prefix)} {}
 
-std::string session_manager::generate_session_prefix() {
+std::string session_manager::generate_prefix() {
   static std::atomic_int64_t session_index{0};
   return fmt::format("{}-session({})", session_prefix_, ++session_index);
 }

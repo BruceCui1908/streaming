@@ -47,23 +47,23 @@ void h264_track::parse_config(network::flat_buffer &buf) {
   // byte[3] avc level
   // byte[4] FF
   // byte[5] E1
-  buf.consume(6);
+  buf.consume_or_fail(6);
 
   // byte[6] byte[7] sps length
   auto sps_size = buf.read_uint16();
-  buf.must_have_length(sps_size);
+  buf.require_length_or_fail(sps_size);
 
   sps_.assign(buf.data(), sps_size);
-  buf.consume(sps_size);
+  buf.consume_or_fail(sps_size);
 
   // skip the byte 01
-  buf.consume(1);
+  buf.consume_or_fail(1);
 
   auto pps_size = buf.read_uint16();
-  buf.must_have_length(pps_size);
+  buf.require_length_or_fail(pps_size);
 
   pps_.assign(buf.data(), pps_size);
-  buf.consume(pps_size);
+  buf.consume_or_fail(pps_size);
 
   extract_bitstream_sps();
 

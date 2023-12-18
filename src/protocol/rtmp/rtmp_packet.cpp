@@ -92,7 +92,7 @@ bool rtmp_packet::is_config_frame() const {
   }
 
   if (msg_type_id == MSG_AUDIO) {
-    buf_.must_have_length(2);
+    buf_.require_length_or_fail(2);
     int codec_id = get_codec_id();
 
     return (rtmp_audio_codec)(codec_id) == rtmp_audio_codec::aac &&
