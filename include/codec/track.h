@@ -3,6 +3,7 @@
 #include "frame.h"
 #include "meta.h"
 #include <memory>
+#include <spdlog/spdlog.h>
 
 namespace codec {
 
@@ -18,10 +19,24 @@ public:
   const int bit_rate() const { return bit_rate_; }
 
   virtual Codec_Type get_codec() = 0;
+
   virtual void input_frame(const frame::ptr &) = 0;
+
+  void set_frame_translator(const frame_translator::ptr &ft) { ft_ = ft; }
+
+  void translate_frame(const frame::ptr &fr) {
+    if (!fr) {
+      spdlog::error(
+          "frame_translator has not been set, cannot translate frame");
+      return;
+    }
+
+    ft_->translate_frame(fr);
+  }
 
 private:
   int bit_rate_{0};
+  frame_translator::ptr ft_;
 };
 
 class video_track : public track {

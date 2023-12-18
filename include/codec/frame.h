@@ -11,7 +11,8 @@ class frame {
 public:
   using ptr = std::shared_ptr<frame>;
 
-  frame() = default;
+  frame(Codec_Type codec_id) : codec_id_{codec_id} {}
+
   virtual ~frame() = default;
 
   uint32_t dts() const { return dts_; }
@@ -24,7 +25,6 @@ public:
   void set_prefix_size(uint8_t size) { prefix_size_ = size; }
   size_t prefix_size() const { return prefix_size_; }
 
-  void set_codec_id(Codec_Type codec_id) { codec_id_ = codec_id; }
   Codec_Type get_codec_id() const { return codec_id_; }
 
   void set_data(const network::flat_buffer::ptr &ptr) { buf_ = ptr; }
@@ -40,6 +40,16 @@ private:
   uint32_t pts_{0};
   uint8_t prefix_size_{0};
   network::flat_buffer::ptr buf_;
+};
+
+class frame_translator {
+public:
+  using ptr = std::shared_ptr<frame_translator>;
+
+  frame_translator() = default;
+  virtual ~frame_translator() = default;
+
+  virtual void translate_frame(const frame::ptr &) = 0;
 };
 
 } // namespace codec

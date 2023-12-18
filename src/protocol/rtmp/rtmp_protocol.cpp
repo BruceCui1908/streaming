@@ -270,6 +270,7 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
       msg_stream_id_ = chunk_data.msg_stream_id;
       chunk_data.time_stamp =
           time_stamp + (chunk_data.is_abs_stamp ? 0 : chunk_data.time_stamp);
+
       // keep the context
       last_packet = now_packet;
       if (chunk_data.msg_length) {

@@ -38,7 +38,7 @@ void rtmp_media_source::process_av_packet(rtmp_packet::ptr pkt) {
   track_stamps_[is_video ? codec::Track_Type::Video
                          : codec::Track_Type::Audio] = pkt->time_stamp;
 
-  // if the frame is pps, then store into the config map
+  // always update the up-to-date config frame for both video and audio
   if (pkt->is_config_frame()) {
     {
       std::scoped_lock lock(config_mtx_);

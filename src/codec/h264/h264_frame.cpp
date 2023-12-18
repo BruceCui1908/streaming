@@ -2,7 +2,7 @@
 
 namespace codec {
 
-h264_frame::h264_frame() { frame::set_codec_id(Codec_Type::CodecH264); }
+h264_frame::h264_frame() : frame(Codec_Type::CodecH264) {}
 
 int h264_frame::get_frame_type() const {
   if (!data() || data()->unread_length() < frame::prefix_size()) {
@@ -16,7 +16,7 @@ bool h264_frame::is_key_frame() const { return get_frame_type() == NAL_IDR; }
 
 bool h264_frame::is_config_frame() const {
   int ft = get_frame_type();
-  return ft == NAL_SEI || ft == NAL_AUD;
+  return ft == NAL_SPS || ft == NAL_PPS;
 }
 
 } // namespace codec

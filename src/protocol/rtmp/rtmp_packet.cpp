@@ -55,6 +55,7 @@ bool rtmp_packet::is_video_keyframe() const {
   return frame_type == rtmp_av_frame_type::key_frame;
 }
 
+/// in RTMP flvtagheader, keyframe is config frame which contains sps/pps
 bool rtmp_packet::is_config_frame() const {
   if (msg_type_id == MSG_VIDEO) {
     if (!is_video_keyframe()) {
