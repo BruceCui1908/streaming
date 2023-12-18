@@ -39,6 +39,7 @@ void media_source::regist() {
   auto &weak_source =
       media_sources_[media_info_->schema()][media_info_->vhost()]
                     [media_info_->app()][media_info_->stream_id()];
+
   auto strong_source = weak_source.lock();
   if (strong_source) {
     if (strong_source.get() == this) {
@@ -54,8 +55,39 @@ void media_source::regist() {
   weak_source = shared_from_this();
 }
 
+template <typename MAP, typename First, typename... KeyTypes>
+static bool erase_media_source(bool &hit, const media_source *thiz, MAP &map,
+                               First &first, KeyTypes &...keys) {
+  auto it = map.find(first);
+  if (it != map.end() && erase_media_source(hit, thiz, it->second, keys...)) {
+    map.erase(it);
+  }
+
+  return map.empty();
+}
+
+template <typename MAP, typename First>
+static bool erase_media_source(bool &hit, const media_source *thiz, MAP &map,
+                               First &first) {
+  auto it = map.find(first);
+  if (it != map.end()) {
+    auto src = it->second.lock();
+    if (!src || src.get() == thiz) {
+      hit = true;
+      map.erase(it);
+    }
+  }
+
+  return map.empty();
+}
+
 void media_source::unregist() {
-  // TODO
+  std::lock_guard<std::recursive_mutex> lock(media_sources_mtx_);
+  bool ret = false;
+  erase_media_source(ret, this, media_sources_, media_info_->schema(),
+                     media_info_->vhost(), media_info_->app(),
+                     media_info_->stream_id());
+  spdlog::debug("unregist {}, result = {}", media_info_->info(), ret);
 }
 
 std::tuple<media_source::ptr, bool>

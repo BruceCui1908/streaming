@@ -24,17 +24,17 @@ void rtmp_session::send(const char *data, size_t size, bool is_async,
   network::session::do_write(data, size, is_async, is_close);
 }
 
-void rtmp_session::on_recv(char *data, size_t size) {
+void rtmp_session::on_recv(network::flat_buffer &buf) {
   ticker_.reset_time();
 
   try {
     // send the packet to the rtmp parser
-    on_parse_rtmp(data, size);
+    on_parse_rtmp(buf);
   } catch (const std::exception &ex) {
     spdlog::error("error received while parsing rtmp, stop the rtmp sesssion, "
                   "session = {}, error = {}",
                   id(), ex.what());
-    stop();
+    shutdown();
   }
 }
 

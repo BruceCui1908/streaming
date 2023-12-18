@@ -16,7 +16,7 @@ public:
   void translate_frame(const codec::frame::ptr &) override;
 
 private:
-  muxer();
+  muxer() = default;
 };
 
 } // namespace media

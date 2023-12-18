@@ -26,7 +26,8 @@ void session::do_read() {
 
   std::weak_ptr<session> weak_self = shared_from_this();
   socket_.async_read_some(
-      boost::asio::buffer(buffer_),
+      boost::asio::buffer(buffer_.write_begin(),
+                          buffer_.session_read_length(MAX_READ_SIZE)),
       [this, weak_self](boost::system::error_code ec,
                         size_t bytes_transferred) {
         auto strong_self = weak_self.lock();
@@ -51,11 +52,13 @@ void session::do_read() {
           }
         }
 
-        // spdlog::info("do_read() reads {} bytes", bytes_transferred);
+        buffer_.session_move_write_index(bytes_transferred);
 
-        total_bytes_ += bytes_transferred;
+        // spdlog::debug("do_read() reads {} bytes, buffer has unread {} bytes",
+        //               bytes_transferred, buffer_.unread_length());
+
         // if no error, then send to derived session class
-        on_recv(buffer_.data(), bytes_transferred);
+        on_recv(buffer_);
 
         do_read();
       });
@@ -132,6 +135,8 @@ void session::stop() {
     // ignored_ec);
   }
 }
+
+void session::shutdown() { session_manager_->stop(shared_from_this()); }
 
 // session_manager impl
 session_manager::ptr session_manager::create(std::string prefix) {

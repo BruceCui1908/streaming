@@ -7,7 +7,6 @@
 
 namespace rtmp {
 static constexpr size_t C1_HANDSHAKE_SIZE = 1536;
-static constexpr size_t kMaxCacheSize = 4 * 1024 * 1024;
 
 rtmp_protocol::rtmp_protocol() {
   // initialize buffer
@@ -17,54 +16,22 @@ rtmp_protocol::rtmp_protocol() {
   };
 }
 
-void rtmp_protocol::on_parse_rtmp(const char *data, size_t size) {
-  if (cache_data_.unread_length() > kMaxCacheSize) {
-    throw std::out_of_range(
-        "cached rtmp protocol data length is out of range!");
-  }
-
-  const char *dummy = data;
-  if (cache_data_.unread_length() > 0) {
-    cache_data_.write(data, size);
-    data = dummy = cache_data_.data();
-    size = cache_data_.unread_length();
-  }
+void rtmp_protocol::on_parse_rtmp(network::flat_buffer &buf) {
 
   if (!next_step_func_) {
     throw std::runtime_error("rtmp next_step_func is empty!");
   }
 
-  bool needAppend = false;
-
-  const char *index = nullptr;
-  do {
-    index = next_step_func_(data, size);
-
-    // if returned pointer is null or points to the original ptr, then break
-    if (!index || index == data) {
-      needAppend = true;
-      break;
-    }
-
-    size -= index - data;
-    data = index;
-    if (!size) {
-      needAppend = false;
-      break;
-    }
-  } while (index != nullptr);
-
-  if (needAppend) {
-    cache_data_.write(data, size);
-    return;
-  }
+  const char *dummy = buf.data();
+  const char *index = next_step_func_(dummy, buf.unread_length());
+  buf.safe_consume(index - dummy);
 }
 
 const char *rtmp_protocol::handle_C0C1(const char *data, size_t size) {
   spdlog::debug("handling C0C1 .....");
   if (size < 1 + C1_HANDSHAKE_SIZE) {
     spdlog::debug("C0C1 handshake needs more data, keep reading!");
-    return nullptr;
+    return data;
   }
 
   // rtmp spec P7
@@ -99,7 +66,7 @@ const char *rtmp_protocol::handle_C2(const char *data, size_t size) {
   spdlog::debug("handling C0C1 .....");
   if (size < C1_HANDSHAKE_SIZE) {
     spdlog::debug("C2 handshake needs more data, keep reading!");
-    return nullptr;
+    return data;
   }
 
   next_step_func_ = [this](const char *data, size_t size) {
@@ -108,9 +75,9 @@ const char *rtmp_protocol::handle_C2(const char *data, size_t size) {
 
   spdlog::debug("rtmp hand shake succeed!");
   // send cmd
-  set_chunk_size(60000);
-  send_acknowledgement(5000000);
-  set_peer_bandwidth(5000000);
+  set_chunk_size(4 * 1024);
+  send_acknowledgement(100 * 1024);
+  set_peer_bandwidth(100 * 1024);
 
   return split_rtmp(data + C1_HANDSHAKE_SIZE, size - C1_HANDSHAKE_SIZE);
 }
@@ -119,7 +86,6 @@ static constexpr size_t HEADER_LENGTH[] = {12, 8, 4, 1};
 
 const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
   auto ptr = const_cast<char *>(data);
-  auto dummy = ptr;
 
   while (size) {
     size_t offset = 0;
@@ -330,7 +296,8 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
   case MSG_AUDIO:
   case MSG_VIDEO: {
     if (!rtmp_source_ || !src_ownership_) {
-      throw std::runtime_error("cannot push rtmp Audio/Video");
+      throw std::runtime_error(
+          "cannot push rtmp Audio/Video, must publish the media info first!");
     }
 
     rtmp_source_->process_av_packet(std::move(ptr));
@@ -358,7 +325,6 @@ void rtmp_protocol::on_process_cmd(AMFDecoder &dec) {
 
   auto it = cmd_funcs.find(method);
   if (it == cmd_funcs.end()) {
-    spdlog::debug("cannot find handler for method = {}", method);
     return;
   }
 
@@ -448,7 +414,7 @@ void rtmp_protocol::on_amf_publish(AMFDecoder &dec) {
     if (!media_ptr) {
       if (has_created) {
         // the source lost for unknown reason
-        spdlog::warn("{} has been created, but lost", media_info_->info());
+        spdlog::warn("{} has been created", media_info_->info());
       }
 
       // create a new rtmp media source and regist
@@ -470,11 +436,17 @@ void rtmp_protocol::on_amf_publish(AMFDecoder &dec) {
       }
       spdlog::info("{} has been created, now reconnecting",
                    media_info_->info());
+      if (src_ownership_) {
+        src_ownership_.reset();
+      }
+
       src_ownership_ = media_ptr->get_ownership();
+
       if (!src_ownership_) {
         throw std::runtime_error(
             fmt::format("cannot get ownership of {}", media_info_->info()));
       }
+
       rtmp_source_ = std::move(rtmp_src);
     }
   } catch (const std::exception &ex) {
@@ -570,7 +542,7 @@ void rtmp_protocol::send_rtmp(uint8_t msg_type_id, uint32_t msg_stream_id,
 
   bytes_sent_ += static_cast<uint32_t>(total_size);
   if (windows_size_ > 0 && bytes_sent_ - bytes_sent_last_ >= windows_size_) {
-    send_acknowledgement(bytes_sent_);
+    send_acknowledgement(bytes_sent_ - bytes_sent_last_);
     bytes_sent_last_ = bytes_sent_;
   }
 }

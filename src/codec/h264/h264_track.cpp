@@ -10,7 +10,7 @@ int h264_track::get_video_height() const { return height_; }
 
 int h264_track::get_video_width() const { return width_; }
 
-double h264_track::get_video_fps() const { return fps_; }
+float h264_track::get_video_fps() const { return fps_; }
 
 Codec_Type h264_track::get_codec() { return Codec_Type::CodecH264; }
 
@@ -51,7 +51,7 @@ void h264_track::parse_config(network::flat_buffer &buf) {
 
   // byte[6] byte[7] sps length
   auto sps_size = buf.read_uint16();
-  buf.ensure_length(sps_size);
+  buf.must_have_length(sps_size);
 
   sps_.assign(buf.data(), sps_size);
   buf.consume(sps_size);
@@ -60,16 +60,35 @@ void h264_track::parse_config(network::flat_buffer &buf) {
   buf.consume(1);
 
   auto pps_size = buf.read_uint16();
-  buf.ensure_length(pps_size);
+  buf.must_have_length(pps_size);
 
   pps_.assign(buf.data(), pps_size);
   buf.consume(pps_size);
 
   extract_bitstream_sps();
+
+  // pass sps frame to muxer
+  encapsulate_config_frame(sps_);
+
+  // pass pps frame to muxer
+  encapsulate_config_frame(pps_);
 }
 
-void h264_track::input_frame(const frame::ptr &ftr) {
-  // TODO
+void h264_track::encapsulate_config_frame(const std::string &config) {
+  if (config.empty()) {
+    return;
+  }
+
+  auto config_ptr = network::flat_buffer::create();
+  config_ptr->write("\x00\x00\x00\x01", 4);
+  config_ptr->write(config.data(), config.size());
+
+  auto config_frame = h264_frame::create();
+  config_frame->set_prefix_size(4);
+  config_frame->set_dts(0);
+  config_frame->set_pts(0);
+  config_frame->set_data(config_ptr);
+  track::input_frame(config_frame);
 }
 
 } // namespace codec

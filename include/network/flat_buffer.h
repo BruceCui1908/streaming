@@ -104,12 +104,46 @@ public:
     return write_index_ - read_index_;
   }
 
-  void ensure_length(size_t len) const {
+  void must_have_length(size_t len) const {
     if (len > unread_length()) {
       throw std::runtime_error(
           fmt::format("flat_buffer {} does not contain the required length {}",
                       unread_length(), len));
     }
+  }
+
+  // for session do_read()
+  size_t session_read_length(size_t n) {
+    static constexpr size_t kMaxCacheSize = 4 * 1024 * 1024;
+
+    if (writable_bytes() >= n) {
+      // if buffer has enough space for the next read for session
+      return n;
+    }
+
+    move_unread_to_left();
+
+    if (writable_bytes() >= n) {
+      return n;
+    }
+
+    if (capacity() > kMaxCacheSize) {
+      throw std::runtime_error("session read buffer has reached limit, client "
+                               "is sending too much data");
+    }
+
+    // ensure read for this time
+    grow(n);
+
+    return n;
+  }
+
+  void session_move_write_index(size_t n) {
+    if (n > writable_bytes()) {
+      throw std::runtime_error("session write_index is out of range");
+    }
+
+    write_index_ += n;
   }
 
   size_t capacity() const { return capacity_; }
@@ -129,12 +163,20 @@ public:
   }
 
   void consume(size_t len) {
-    if (len < unread_length()) {
+    if (len <= unread_length()) {
       read_index_ += len;
     } else {
       throw std::runtime_error(
           fmt::format("flat_buffer cannot consume {} bytes, unread length = {}",
                       len, unread_length()));
+    }
+  }
+
+  void safe_consume(size_t len) {
+    if (len <= unread_length()) {
+      read_index_ += len;
+    } else {
+      reset();
     }
   }
 
@@ -295,12 +337,16 @@ private:
       }
       data_ = temp;
     } else {
-      // move readable data to the front, make space inside buffer
-      size_t unconsumed_data_length = unread_length();
-      std::memmove(begin(), begin() + read_index_, unconsumed_data_length);
-      read_index_ = 0;
-      write_index_ = unconsumed_data_length;
+      move_unread_to_left();
     }
+  }
+
+  void move_unread_to_left() {
+    // move readable data to the front, make space inside buffer
+    size_t unconsumed_data_length = unread_length();
+    std::memmove(begin(), begin() + read_index_, unconsumed_data_length);
+    read_index_ = 0;
+    write_index_ = unconsumed_data_length;
   }
 
 private:

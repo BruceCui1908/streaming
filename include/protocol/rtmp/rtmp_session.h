@@ -26,7 +26,7 @@ public:
 private:
   rtmp_session(RTMP_CONSTRUCTOR_PARAMS);
 
-  void on_recv(char *, size_t) override;
+  void on_recv(network::flat_buffer &) override;
 
 private:
   std::function<const char *(const char *, size_t)> next_step_fun_;

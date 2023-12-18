@@ -2,7 +2,7 @@
 
 #include <boost/asio.hpp>
 
-#include <spdlog/spdlog.h>
+#include "flat_buffer.h"
 
 #include <array>
 #include <functional>
@@ -29,6 +29,9 @@ public:
   using ptr = std::shared_ptr<session>;
   using err_cb = std::function<void(const session_manager_ptr &)>;
 
+  static constexpr size_t MAX_BUFFER_SIZE = 8 * 1024;
+  static constexpr size_t MAX_READ_SIZE = MAX_BUFFER_SIZE / 2;
+
   virtual ~session();
 
   session(const session &) = delete;
@@ -41,6 +44,8 @@ public:
   virtual void start() = 0;
   virtual void stop();
 
+  void shutdown();
+
 protected:
   session(SESSION_CONSTRUCTOR_PARAMS);
 
@@ -50,21 +55,16 @@ protected:
   void do_write(const char *, size_t, bool is_async = false,
                 bool is_close = false);
 
-  /// @brief  data read from the socket, if the operation is asynchronous, then
-  /// copy the data into new buffer
-  /// @param
-  /// @param
-  virtual void on_recv(char *, size_t) = 0;
+  virtual void on_recv(flat_buffer &) = 0;
 
 protected:
   /// Buffer for incoming data.
-  std::array<char, 8192> buffer_;
+  flat_buffer buffer_{MAX_BUFFER_SIZE};
   boost::asio::ip::tcp::socket socket_;
   std::string session_prefix_;
   int raw_fd_{-1};
   std::string id_;
   session_manager_ptr session_manager_;
-  uint64_t total_bytes_{0};
 };
 
 class session_manager : public std::enable_shared_from_this<session_manager> {

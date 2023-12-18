@@ -6,7 +6,6 @@
 #include <mutex>
 #include <unordered_map>
 
-
 namespace rtmp {
 
 class rtmp_media_source : public media::media_source {
@@ -14,6 +13,8 @@ public:
   using ptr = std::shared_ptr<rtmp_media_source>;
 
   static ptr create(const media::media_info::ptr &);
+
+  ~rtmp_media_source() = default;
 
   void init_tracks(std::unordered_map<std::string, std::any> &);
 

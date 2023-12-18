@@ -11,8 +11,7 @@ namespace rtmp {
 void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
 
   // tag header(1 byte) + packet type(1 byte) + composition time(3 bytes)
-  pkt->buf_.ensure_length(5);
-  pkt->buf_.capture_snapshot();
+  pkt->buf_.must_have_length(5);
 
   // if the frame is sps/pps
   if (pkt->is_config_frame()) {
@@ -31,7 +30,6 @@ void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
     }
 
     h264_track_ptr->parse_config(pkt->buf_);
-    pkt->buf_.restore_snapshot();
     return;
   }
 

@@ -20,10 +20,11 @@ public:
 
   virtual Codec_Type get_codec() = 0;
 
-  virtual void input_frame(const frame::ptr &) = 0;
+  virtual void input_frame(const frame::ptr &fr) { translate_frame(fr); }
 
   void set_frame_translator(const frame_translator::ptr &ft) { ft_ = ft; }
 
+private:
   void translate_frame(const frame::ptr &fr) {
     if (!fr) {
       spdlog::error(
@@ -45,7 +46,7 @@ public:
 
   virtual int get_video_height() const = 0;
   virtual int get_video_width() const = 0;
-  virtual double get_video_fps() const = 0;
+  virtual float get_video_fps() const = 0;
 };
 
 class audio_track : public track {

@@ -20,7 +20,7 @@ public:
 protected:
   rtmp_protocol();
 
-  void on_parse_rtmp(const char *, size_t);
+  void on_parse_rtmp(network::flat_buffer &);
 
   virtual void send(const char *, size_t, bool is_async = false,
                     bool is_close = false) = 0;
@@ -59,7 +59,6 @@ private:
 
   // for sending rtmp packet
   util::resource_pool<network::buffer_raw>::ptr pool_;
-  network::flat_buffer cache_data_;
   std::function<const char *(const char *, size_t)> next_step_func_;
 
   double transaction_id_ = 0;

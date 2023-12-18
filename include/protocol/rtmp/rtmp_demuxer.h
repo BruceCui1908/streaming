@@ -15,6 +15,9 @@ class rtmp_demuxer : public media::demuxer {
 public:
   using ptr = std::shared_ptr<rtmp_demuxer>;
 
+  rtmp_demuxer() = default;
+  ~rtmp_demuxer() = default;
+
   void init_tracks_with_metadata(std::unordered_map<std::string, std::any> &);
   void init_video_track(int codecid, int bit_rate);
   void init_audio_track(int codecid, int sample_rate, int channels,

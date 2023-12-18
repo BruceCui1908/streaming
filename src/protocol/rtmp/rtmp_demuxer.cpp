@@ -64,6 +64,7 @@ void rtmp_demuxer::init_audio_track(int codecid, int sample_rate, int channels,
   aac_rtmp_decoder::ptr aac_dec_ptr(new aac_rtmp_decoder(audio_track_));
   audio_rtmp_decoder_ = aac_dec_ptr;
   audio_track_->set_bit_rate(bit_rate);
+  audio_track_->set_frame_translator(demuxer::get_muxer());
 }
 
 void rtmp_demuxer::init_video_track(int codecid, int bit_rate) {
@@ -83,27 +84,19 @@ void rtmp_demuxer::init_video_track(int codecid, int bit_rate) {
   h264_rtmp_decoder::ptr avc_dec_ptr(new h264_rtmp_decoder(video_track_));
   video_rtmp_decoder_ = avc_dec_ptr;
   video_track_->set_bit_rate(bit_rate);
+  video_track_->set_frame_translator(demuxer::get_muxer());
 }
 
 void rtmp_demuxer::input_rtmp(rtmp_packet::ptr &pkt) {
-  switch (pkt->msg_type_id) {
-  case MSG_VIDEO: {
-    if (video_rtmp_decoder_) {
-      video_rtmp_decoder_->input_rtmp(pkt);
-    }
-    break;
+  pkt->buf_.capture_snapshot();
+  if (pkt->msg_type_id == MSG_VIDEO && video_rtmp_decoder_) {
+    spdlog::debug("received video data, size = {}", pkt->msg_length);
+    video_rtmp_decoder_->input_rtmp(pkt);
+  } else if (pkt->msg_type_id == MSG_AUDIO && audio_rtmp_decoder_) {
+    spdlog::debug("received audio data, size = {}", pkt->msg_length);
+    audio_rtmp_decoder_->input_rtmp(pkt);
   }
-
-  case MSG_AUDIO: {
-    if (audio_rtmp_decoder_) {
-      audio_rtmp_decoder_->input_rtmp(pkt);
-    }
-    break;
-  }
-
-  default:
-    break;
-  }
+  pkt->buf_.restore_snapshot();
 }
 
 } // namespace rtmp

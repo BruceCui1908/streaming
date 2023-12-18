@@ -21,6 +21,8 @@ class media_source : public std::enable_shared_from_this<media_source> {
 public:
   using ptr = std::shared_ptr<media_source>;
 
+  virtual ~media_source();
+
   /// bool denotes if the media source has been created*/
   static std::tuple<ptr, bool> find(MEDIA_SOURCE_PARAMS);
 
@@ -28,7 +30,6 @@ public:
 
   void regist();
 
-  virtual ~media_source();
   media_source(const media_source &) = delete;
   media_source &operator=(const media_source &) = delete;
   media_source(media_source &&) = delete;
