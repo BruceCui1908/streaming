@@ -2,8 +2,7 @@
 
 #include "frame.h"
 #include "meta.h"
-#include <memory>
-#include <spdlog/spdlog.h>
+#include "network/flat_buffer.h"
 
 namespace codec {
 
@@ -19,6 +18,8 @@ public:
   const int bit_rate() const { return bit_rate_; }
 
   virtual Codec_Type get_codec() = 0;
+
+  virtual void parse_config(const network::flat_buffer::ptr &) = 0;
 
   virtual void input_frame(const frame::ptr &fr) { translate_frame(fr); }
 

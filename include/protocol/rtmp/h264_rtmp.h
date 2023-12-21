@@ -13,7 +13,7 @@ public:
   void input_rtmp(rtmp_packet::ptr &) override;
 
 private:
-  void split_nal_frame(network::flat_buffer &, uint32_t, uint32_t);
+  void split_nal_frame(const network::flat_buffer::ptr &, uint32_t, uint32_t);
 };
 
 } // namespace rtmp

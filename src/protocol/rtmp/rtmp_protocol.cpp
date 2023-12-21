@@ -207,8 +207,9 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
       offset += 4;
     }
 
-    auto remain_msg_len =
-        chunk_data.msg_length - chunk_data.buf_.unread_length();
+    const auto &buf = chunk_data.buf();
+
+    auto remain_msg_len = chunk_data.msg_length - buf->unread_length();
     auto more = std::min(chunk_size_in_, (size_t)(remain_msg_len));
 
     if (size < header_length + offset + more) {
@@ -216,7 +217,7 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
     }
 
     if (more) {
-      chunk_data.buf_.write(ptr + header_length + offset, more);
+      buf->write(ptr + header_length + offset, more);
     }
 
     ptr += header_length + offset + more;
@@ -231,7 +232,7 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
     }
 
     // if the frame is ready, then sent to handle chunk
-    if (chunk_data.msg_length == chunk_data.buf_.unread_length()) {
+    if (chunk_data.msg_length == buf->unread_length()) {
       msg_stream_id_ = chunk_data.msg_stream_id;
       chunk_data.time_stamp =
           time_stamp + (chunk_data.is_abs_stamp ? 0 : chunk_data.time_stamp);
@@ -256,12 +257,14 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
     return;
   }
 
+  const auto &buf = ptr->buf();
+
   switch (ptr->msg_type_id) {
   case MSG_SET_CHUNK: {
-    if (ptr->buf_.unread_length() < 4) {
+    if (buf->unread_length() < 4) {
       throw std::runtime_error("MSG_SET_CHUNK not enough data");
     }
-    chunk_size_in_ = util::load_be32(ptr->buf_.data());
+    chunk_size_in_ = util::load_be32(buf->data());
     spdlog::debug("received MSG_SET_CHUNK {}", chunk_size_in_);
     break;
   }
@@ -271,7 +274,7 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
     // receiving bytes equal to the window size. The window size is the maximum
     // number of bytes that the sender sends without receiving acknowledgment
     // from the receiver
-    if (ptr->buf_.unread_length() < 4) {
+    if (buf->unread_length() < 4) {
       throw std::runtime_error("MSG_ACK not enough data");
     }
     spdlog::debug("received MSG_ACK");
@@ -280,14 +283,14 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr) {
 
   case MSG_CMD:
   case MSG_CMD3: {
-    AMFDecoder dec(ptr->buf_, ptr->msg_type_id == MSG_CMD ? 0 : 3);
+    AMFDecoder dec(buf, ptr->msg_type_id == MSG_CMD ? 0 : 3);
     on_process_cmd(dec);
     break;
   }
 
   case MSG_DATA:
   case MSG_DATA3: {
-    AMFDecoder dec(ptr->buf_, ptr->msg_type_id == MSG_DATA ? 0 : 3);
+    AMFDecoder dec(buf, ptr->msg_type_id == MSG_DATA ? 0 : 3);
     on_process_metadata(dec);
     break;
   }
@@ -596,7 +599,7 @@ void rtmp_protocol::on_process_metadata(AMFDecoder &dec) {
     // the first one is string
     type = dec.load<std::string>();
     if (type == "onMetaData") {
-      dec.data().consume_or_fail(5);
+      dec.data()->consume_or_fail(5);
       std::string key;
       std::any value;
 

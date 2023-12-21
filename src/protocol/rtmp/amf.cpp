@@ -229,14 +229,14 @@ const AMFValue::mapType &AMFValue::get_map() const {
 
 /// AMFDecoder
 uint8_t AMFDecoder::pop_front() {
-  uint8_t x = buf_.read_uint8();
+  uint8_t x = data()->read_uint8();
   if (version_ == 0 && x == AMF0Type::AMF_SWITCH_3) {
     version_ = 3;
   }
   return x;
 }
 
-uint8_t AMFDecoder::peek_front() { return buf_.peek_uint8(); }
+uint8_t AMFDecoder::peek_front() { return data()->peek_uint8(); }
 
 template <> unsigned int AMFDecoder::load<unsigned int>() {
   unsigned int value = 0;
@@ -259,8 +259,8 @@ template <> std::string AMFDecoder::load<std::string>() {
   if (pop_front() != AMF0Type::AMF_STRING) {
     throw std::runtime_error("Expected a string");
   }
-  str_len = buf_.read_uint16();
-  return buf_.to_string(str_len);
+  str_len = data()->read_uint16();
+  return data()->to_string(str_len);
 }
 
 template <> double AMFDecoder::load<double>() {
@@ -269,7 +269,7 @@ template <> double AMFDecoder::load<double>() {
     throw std::runtime_error("Expected a number");
   }
 
-  uint64_t num = buf_.read_uint64();
+  uint64_t num = data()->read_uint64();
   double n = 0;
   std::memcpy(&n, &num, sizeof(num));
   return n;
@@ -285,7 +285,7 @@ template <> bool AMFDecoder::load<bool>() {
 }
 
 std::string AMFDecoder::load_key() {
-  return buf_.to_string(buf_.read_uint16());
+  return data()->to_string(data()->read_uint16());
 }
 
 AMFValue AMFDecoder::load_object() {

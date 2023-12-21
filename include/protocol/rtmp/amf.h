@@ -69,14 +69,24 @@ private:
 
 class AMFDecoder {
 public:
-  AMFDecoder(network::flat_buffer &buf, int version = 0)
-      : buf_(buf), version_(version) {}
+  AMFDecoder(const network::flat_buffer::ptr &buf, int version = 0)
+      : version_(version) {
+    if (!buf) {
+      throw std::runtime_error("cannot init AMFDecoder with empty flat_buffer");
+    }
+    buf_ = buf;
+  }
 
   template <typename TP> TP load();
 
   AMFValue load_object();
 
-  network::flat_buffer &data() { return buf_; }
+  const network::flat_buffer::ptr &data() {
+    if (!buf_) {
+      throw std::runtime_error("AMFDecoder has empty flat_buffer");
+    }
+    return buf_;
+  }
 
   uint8_t peek_front();
   uint8_t pop_front();
@@ -86,8 +96,8 @@ public:
   const int version() const { return version_; }
 
 private:
-  network::flat_buffer &buf_;
   int version_;
+  network::flat_buffer::ptr buf_{nullptr};
 };
 
 class AMFEncoder {

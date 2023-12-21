@@ -2,7 +2,6 @@
 
 #include "codec/track.h"
 #include "h264_frame.h"
-#include "network/flat_buffer.h"
 
 namespace codec {
 
@@ -15,7 +14,7 @@ public:
   float get_video_fps() const override;
   Codec_Type get_codec() override;
 
-  void parse_config(network::flat_buffer &);
+  void parse_config(const network::flat_buffer::ptr &) override;
 
   const std::string &get_sps() const { return sps_; }
   const std::string &get_pps() const { return pps_; }

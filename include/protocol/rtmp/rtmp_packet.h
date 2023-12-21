@@ -152,8 +152,6 @@ public:
   uint32_t ts_delta;
   uint32_t time_stamp;
 
-  network::flat_buffer buf_;
-
   ~rtmp_packet() = default;
   rtmp_packet(const rtmp_packet &) = delete;
   rtmp_packet &operator=(const rtmp_packet &) = delete;
@@ -172,10 +170,13 @@ public:
 
   size_t size();
 
-private:
-  rtmp_packet() = default;
+  const network::flat_buffer::ptr &buf();
 
 private:
+  rtmp_packet();
+
+private:
+  network::flat_buffer::ptr buf_;
   size_t header_length_{0};
 };
 

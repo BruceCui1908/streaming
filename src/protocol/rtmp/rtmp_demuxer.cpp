@@ -88,7 +88,8 @@ void rtmp_demuxer::init_video_track(int codecid, int bit_rate) {
 }
 
 void rtmp_demuxer::input_rtmp(rtmp_packet::ptr &pkt) {
-  pkt->buf_.capture_snapshot();
+  pkt->buf()->capture_snapshot();
+
   if (pkt->msg_type_id == MSG_VIDEO && video_rtmp_decoder_) {
     spdlog::debug("received video data, size = {}", pkt->msg_length);
     video_rtmp_decoder_->input_rtmp(pkt);
@@ -96,7 +97,8 @@ void rtmp_demuxer::input_rtmp(rtmp_packet::ptr &pkt) {
     spdlog::debug("received audio data, size = {}", pkt->msg_length);
     audio_rtmp_decoder_->input_rtmp(pkt);
   }
-  pkt->buf_.restore_snapshot();
+
+  pkt->buf()->restore_snapshot();
 }
 
 } // namespace rtmp
