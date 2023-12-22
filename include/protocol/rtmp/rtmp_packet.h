@@ -8,8 +8,8 @@
 
 namespace rtmp {
 
-static constexpr size_t RANDOM_HANDSHAKE_SIZE = 1528;
-static constexpr size_t DEFAULT_CHUNK_LEN = 128;
+static constexpr size_t kRandomHandshakeSize = 1528;
+static constexpr size_t kDefaultChunkLength = 128;
 
 #define MSG_SET_CHUNK 1    /*Set Chunk Size (1)*/
 #define MSG_ABORT 2        /*Abort Message (2)*/
@@ -44,7 +44,7 @@ struct rtmp_handshake {
 
   uint8_t time_stamp_[4] = {0};
   uint8_t zero_[4] = {0};
-  uint8_t random_[RANDOM_HANDSHAKE_SIZE];
+  uint8_t random_[kRandomHandshakeSize];
 };
 
 /// rtmp spec P14

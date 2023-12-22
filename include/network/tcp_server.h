@@ -16,6 +16,9 @@ class tcp_server : public server {
 public:
   using ptr = std::shared_ptr<tcp_server>;
 
+  static constexpr char kDefaultLocalIpv4[] = "0.0.0.0";
+  static constexpr char kDefaultLocalIpv6[] = "0::0";
+
   static ptr create(boost::asio::io_context &, const uint16_t,
                     ip_type ipType = ip_type::ipv4);
 

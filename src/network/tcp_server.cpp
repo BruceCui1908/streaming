@@ -5,9 +5,6 @@
 
 namespace network {
 
-#define DEFAULT_LOCAL_IPV4 "0.0.0.0"
-#define DEFAULT_LOCAL_IPV6 "0::0"
-
 tcp_server::ptr tcp_server::create(boost::asio::io_context &io_context,
                                    const uint16_t port, ip_type ipType) {
   return std::shared_ptr<tcp_server>(new tcp_server(io_context, port, ipType));
@@ -24,8 +21,8 @@ tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port,
   start_signal_listener();
 
   tcp::resolver resolver(io_context);
-  auto result = resolver.resolve(ipType == ip_type::ipv4 ? DEFAULT_LOCAL_IPV4
-                                                         : DEFAULT_LOCAL_IPV6,
+  auto result = resolver.resolve(ipType == ip_type::ipv4 ? kDefaultLocalIpv4
+                                                         : kDefaultLocalIpv6,
                                  std::to_string(port));
   if (result.empty()) {
     throw std::invalid_argument("cannot resolve tcp address");

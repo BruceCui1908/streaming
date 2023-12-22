@@ -50,8 +50,8 @@ private:
   int chunk_stream_id_{0};
   int msg_stream_id_{0};
 
-  size_t chunk_size_in_ = DEFAULT_CHUNK_LEN;
-  size_t chunk_size_out_ = DEFAULT_CHUNK_LEN;
+  size_t chunk_size_in_ = kDefaultChunkLength;
+  size_t chunk_size_out_ = kDefaultChunkLength;
 
   std::unordered_map<
       int, std::pair<rtmp_packet::ptr /* now */, rtmp_packet::ptr /* last */>>

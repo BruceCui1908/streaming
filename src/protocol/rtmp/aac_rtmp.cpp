@@ -1,4 +1,5 @@
 #include "aac_rtmp.h"
+#include "aac/aac_frame.h"
 #include "aac/aac_track.h"
 
 namespace rtmp {
@@ -7,6 +8,10 @@ namespace rtmp {
 void aac_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
   // aac[0] and aac[1]
   const auto &buf = pkt->buf();
+  if (!buf) {
+    throw std::runtime_error("rtmp_packet has empty aac data");
+  }
+
   buf->require_length_or_fail(2);
 
   const auto track_ptr = get_track();
@@ -29,7 +34,8 @@ void aac_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt) {
 
   buf->consume_or_fail(2);
 
-  // TODO pass to process frame
+  auto aac_ptr = std::make_shared<codec::aac_frame>(buf, pkt->time_stamp);
+  aac_track_ptr->input_frame(aac_ptr);
 }
 
 } // namespace rtmp

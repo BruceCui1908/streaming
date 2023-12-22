@@ -1,17 +1,22 @@
 #pragma once
 
 #include "util/util.h"
+#include <algorithm>
 #include <cctype>
 #include <memory>
-#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <string>
+
+#include <spdlog/spdlog.h>
 
 namespace media {
 
 class media_info : public std::enable_shared_from_this<media_info> {
 public:
   using ptr = std::shared_ptr<media_info>;
+
+  static constexpr char kVhostParam[] = "vhost=";
+  static constexpr char kTokenParam[] = "token=";
 
   static ptr create(std::string schmea) {
     return std::shared_ptr<media_info>(new media_info(std::move(schmea)));
@@ -43,11 +48,10 @@ public:
 
     // find the first alphabet
     size_t start = 0;
-    for (auto i = 0; i < stream.size(); ++i) {
-      if (std::isalpha(stream[i])) {
-        start = i;
-        break;
-      }
+    auto it = std::find_if(stream.begin(), stream.end(),
+                           [](char c) { return std::isalpha(c); });
+    if (it != stream.end()) {
+      start = std::distance(stream.begin(), it);
     }
 
     auto stream_pos = stream.find_first_of('?', start);
@@ -58,12 +62,12 @@ public:
       stream_id_ = stream.substr(start, stream_pos - start);
     }
 
-    auto vhost_pos = stream.find_first_of("vhost=", stream_pos);
+    auto vhost_pos = stream.find_first_of(kVhostParam, stream_pos);
     if (vhost_pos == std::string::npos) {
       return;
     }
 
-    vhost_pos += 6;
+    vhost_pos += sizeof(kVhostParam);
 
     auto amper_pos = stream.find_first_of('&', vhost_pos);
     if (amper_pos == std::string::npos) {
@@ -72,12 +76,12 @@ public:
       vhost_ = stream.substr(vhost_pos, amper_pos - vhost_pos);
     }
 
-    auto token_pos = stream.find_first_of("token=", amper_pos);
+    auto token_pos = stream.find_first_of(kTokenParam, amper_pos);
     if (token_pos == std::string::npos) {
       return;
     }
 
-    token_pos += 6;
+    token_pos += sizeof(kTokenParam);
 
     token_ = stream.substr(token_pos);
   }

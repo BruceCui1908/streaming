@@ -25,7 +25,7 @@ void session::do_read() {
   std::weak_ptr<session> weak_self = shared_from_this();
   socket_.async_read_some(
       boost::asio::buffer(buffer_.write_begin(),
-                          buffer_.socket_read_length(SOCKET_READ_SIZE)),
+                          buffer_.socket_read_length(kSocketReadSize)),
       [this, weak_self](boost::system::error_code ec,
                         size_t bytes_transferred) {
         auto strong_self = weak_self.lock();

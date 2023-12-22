@@ -5,7 +5,7 @@
 #include <algorithm>
 
 namespace rtmp {
-static constexpr size_t C1_HANDSHAKE_SIZE = 1536;
+static constexpr size_t kC1HandshakeSize = 1536;
 
 rtmp_protocol::rtmp_protocol() {
   // initialize buffer
@@ -28,7 +28,7 @@ void rtmp_protocol::on_parse_rtmp(network::flat_buffer &buf) {
 
 const char *rtmp_protocol::handle_C0C1(const char *data, size_t size) {
   spdlog::debug("handling C0C1 .....");
-  if (size < 1 + C1_HANDSHAKE_SIZE) {
+  if (size < 1 + kC1HandshakeSize) {
     spdlog::debug("C0C1 handshake needs more data, keep reading!");
     return data;
   }
@@ -51,19 +51,19 @@ const char *rtmp_protocol::handle_C0C1(const char *data, size_t size) {
   send((char *)(&s1), sizeof(s1));
 
   // send S2
-  send(data + 1, C1_HANDSHAKE_SIZE);
+  send(data + 1, kC1HandshakeSize);
 #endif
 
   next_step_func_ = [this](const char *data, size_t size) {
     return handle_C2(data, size);
   };
 
-  return data + 1 + C1_HANDSHAKE_SIZE;
+  return data + 1 + kC1HandshakeSize;
 }
 
 const char *rtmp_protocol::handle_C2(const char *data, size_t size) {
   spdlog::debug("handling C0C1 .....");
-  if (size < C1_HANDSHAKE_SIZE) {
+  if (size < kC1HandshakeSize) {
     spdlog::debug("C2 handshake needs more data, keep reading!");
     return data;
   }
@@ -78,10 +78,10 @@ const char *rtmp_protocol::handle_C2(const char *data, size_t size) {
   send_acknowledgement(100 * 1024);
   set_peer_bandwidth(100 * 1024);
 
-  return split_rtmp(data + C1_HANDSHAKE_SIZE, size - C1_HANDSHAKE_SIZE);
+  return split_rtmp(data + kC1HandshakeSize, size - kC1HandshakeSize);
 }
 
-static constexpr size_t HEADER_LENGTH[] = {12, 8, 4, 1};
+static constexpr size_t kHeaderLength[] = {12, 8, 4, 1};
 
 const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
   auto ptr = const_cast<char *>(data);
@@ -89,7 +89,7 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
   while (size) {
     size_t offset = 0;
     auto header = reinterpret_cast<rtmp_header *>(ptr);
-    auto header_length = HEADER_LENGTH[header->fmt];
+    auto header_length = kHeaderLength[header->fmt];
 
     chunk_stream_id_ = header->chunk_id;
     // The IDs 0, 1, and 2 are reserved

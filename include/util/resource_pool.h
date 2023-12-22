@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 #include <functional>
 #include <memory>
@@ -7,25 +8,25 @@
 
 namespace util {
 
-#define DEFAULT_POOL_SIZE 64
-
 template <typename T>
 class resource_pool : public std::enable_shared_from_this<resource_pool<T>> {
 public:
   using ptr = std::shared_ptr<resource_pool>;
 
-  static ptr create(size_t pool_size = DEFAULT_POOL_SIZE) {
-    pool_size = pool_size ? pool_size : DEFAULT_POOL_SIZE;
+  static constexpr size_t kDefaultPoolSize = 64;
+
+  static ptr create(size_t pool_size = kDefaultPoolSize) {
+    pool_size = pool_size ? pool_size : kDefaultPoolSize;
     return std::shared_ptr<resource_pool<T>>(new resource_pool<T>(pool_size));
   }
 
   ~resource_pool() {
-    for (auto ptr : objs_) {
+    std::for_each(objs_.begin(), objs_.end(), [](T *&ptr) {
       if (ptr) {
         delete ptr;
         ptr = nullptr;
       }
-    }
+    });
   }
 
   std::shared_ptr<T> obtain() {

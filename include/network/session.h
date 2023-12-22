@@ -28,8 +28,8 @@ public:
 
   friend class session_manager;
 
-  static constexpr size_t MAX_BUFFER_CACHE_SIZE = 8 * 1024;
-  static constexpr size_t SOCKET_READ_SIZE = MAX_BUFFER_CACHE_SIZE / 2;
+  static constexpr size_t kMaxBufferCacheSize = 8 * 1024;
+  static constexpr size_t kSocketReadSize = kMaxBufferCacheSize / 2;
 
   virtual ~session();
 
@@ -57,7 +57,7 @@ private:
   void stop();
 
 protected:
-  flat_buffer buffer_{MAX_BUFFER_CACHE_SIZE};
+  flat_buffer buffer_{kMaxBufferCacheSize};
   boost::asio::ip::tcp::socket socket_;
   std::string session_prefix_;
   int raw_fd_{-1};

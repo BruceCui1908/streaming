@@ -1,8 +1,11 @@
 #pragma once
 
+#include "aac_frame.h"
 #include "codec/track.h"
 
 namespace codec {
+
+static constexpr size_t kAdtsHeaderLength = 7;
 
 class aac_track : public audio_track {
 public:
@@ -15,8 +18,7 @@ public:
 
   void parse_config(const network::flat_buffer::ptr &) override;
 
-  // TODO
-  void input_frame(const frame::ptr &) override {}
+  void input_frame(const frame::ptr &) override;
 
 private:
   std::string cfg_;
