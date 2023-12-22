@@ -6,7 +6,6 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -239,10 +238,9 @@ public:
     write_index_ = write_index_temp_;
   }
 
-  void dump() {
+  std::string dump() const {
     if (!data()) {
-      std::cout << "null data" << std::endl;
-      return;
+      return "";
     }
 
     std::stringstream ss;
@@ -254,18 +252,13 @@ public:
         ss << "0";
       }
 
-      std::cout << b;
-      std::cout << " ";
       ss << b.to_ulong() << " ";
       if ((i + 1) % 8 == 0) {
-        std::cout << "\n";
         ss << "\n";
       }
     }
 
-    std::cout << std::endl;
-
-    std::cout << ss.str() << std::endl;
+    return ss.str();
   }
 
   // for session do_read()

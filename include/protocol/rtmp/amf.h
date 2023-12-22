@@ -1,9 +1,11 @@
 #pragma once
-#include <map>
-#include <string>
-#include <vector>
 
 #include "network/flat_buffer.h"
+
+#include <map>
+#include <string>
+#include <variant>
+#include <vector>
 
 namespace rtmp {
 
@@ -32,11 +34,6 @@ public:
   AMFValue(double);
   AMFValue(bool);
 
-  AMFValue(const AMFValue &);
-  AMFValue &operator=(const AMFValue &);
-  ~AMFValue();
-
-  void clear();
   AMF0Type type() const;
   const std::string &as_string() const;
   double as_number() const;
@@ -52,19 +49,8 @@ public:
   const mapType &get_map() const;
 
 private:
-  void destroy();
-  void init();
-
-private:
   AMF0Type type_;
-
-  union {
-    double number;
-    bool boolean;
-    std::string *string;
-    mapType *object;
-    arrayType *array;
-  } value_;
+  std::variant<double, bool, std::string, mapType, arrayType> value_;
 };
 
 class AMFDecoder {

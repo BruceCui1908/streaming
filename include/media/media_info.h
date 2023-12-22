@@ -42,6 +42,9 @@ public:
 
   // parse stream like stream?vhost=test.com&token=abcdef
   void parse_stream(const std::string &stream) {
+    static_assert(sizeof(kVhostParam>1),"kVhostParam is incorrect");
+    static_assert(sizeof(kVhostParam>1),"kVhostParam is incorrect");
+
     if (stream.empty()) {
       throw std::invalid_argument("stream cannot be empty");
     }
@@ -67,7 +70,7 @@ public:
       return;
     }
 
-    vhost_pos += sizeof(kVhostParam);
+    vhost_pos += sizeof(kVhostParam) - 1;
 
     auto amper_pos = stream.find_first_of('&', vhost_pos);
     if (amper_pos == std::string::npos) {
@@ -81,7 +84,7 @@ public:
       return;
     }
 
-    token_pos += sizeof(kTokenParam);
+    token_pos += sizeof(kTokenParam) - 1;
 
     token_ = stream.substr(token_pos);
   }

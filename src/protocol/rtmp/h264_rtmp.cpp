@@ -72,9 +72,10 @@ void h264_rtmp_decoder::split_nal_frame(const network::flat_buffer::ptr &buf,
     track_ptr->input_frame(frame_ptr);
   }
 
-  spdlog::debug(
-      "h264_rtmp_decoder finished splitting frames, the buf remain size is {}",
-      buf->unread_length());
+  if (buf->unread_length()) {
+    spdlog::error("Error while splitting H.264 frames\n {}", buf->dump());
+    throw std::runtime_error("H.264 frames are encoded incorrectly");
+  }
 }
 
 } // namespace rtmp
