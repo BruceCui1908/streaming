@@ -42,8 +42,8 @@ public:
 
   // parse stream like stream?vhost=test.com&token=abcdef
   void parse_stream(const std::string &stream) {
-    static_assert(sizeof(kVhostParam>1),"kVhostParam is incorrect");
-    static_assert(sizeof(kVhostParam>1),"kVhostParam is incorrect");
+    static_assert(sizeof(kVhostParam) > 1, "kVhostParam is incorrect");
+    static_assert(sizeof(kVhostParam) > 1, "kVhostParam is incorrect");
 
     if (stream.empty()) {
       throw std::invalid_argument("stream cannot be empty");
