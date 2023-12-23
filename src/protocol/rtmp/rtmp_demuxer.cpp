@@ -37,20 +37,20 @@ void rtmp_demuxer::init_tracks_with_metadata(
 
   // has video track
   if (videocodecid) {
-    init_video_track(codec::Codec_Type(videocodecid), videodatarate * 1024);
+    init_video_track(rtmp_flv_codec_id(videocodecid), videodatarate * 1024);
   }
 
   if (audiocodecid) {
-    init_audio_track(codec::Codec_Type(audiocodecid), audiodatarate * 1024);
+    init_audio_track(rtmp_flv_codec_id(audiocodecid), audiodatarate * 1024);
   }
 }
 
-void rtmp_demuxer::init_audio_track(codec::Codec_Type codecid, int bit_rate) {
+void rtmp_demuxer::init_audio_track(rtmp_flv_codec_id codecid, int bit_rate) {
   if (audio_rtmp_decoder_) {
     return;
   }
 
-  if (codecid != codec::Codec_Type::CodecAAC) {
+  if (codecid != rtmp_flv_codec_id::aac) {
     throw std::runtime_error(fmt::format(
         "Currently, only the AAC audio codec is supported; codecs {} "
         "are not available.",
@@ -63,12 +63,12 @@ void rtmp_demuxer::init_audio_track(codec::Codec_Type codecid, int bit_rate) {
   audio_rtmp_decoder_ = std::make_shared<aac_rtmp_decoder>(audio_track_);
 }
 
-void rtmp_demuxer::init_video_track(codec::Codec_Type codecid, int bit_rate) {
+void rtmp_demuxer::init_video_track(rtmp_flv_codec_id codecid, int bit_rate) {
   if (video_rtmp_decoder_) {
     return;
   }
 
-  if (codecid != codec::Codec_Type::CodecH264) {
+  if (codecid != rtmp_flv_codec_id::h264) {
     throw std::runtime_error(fmt::format(
         "Currently, only the H264 video codec is supported; codecs {} "
         "are not available.",
