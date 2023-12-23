@@ -49,12 +49,9 @@ void rtmp_demuxer::init_audio_track(rtmp_flv_codec_id codecid, int bit_rate) {
   if (audio_rtmp_decoder_) {
     return;
   }
-
   if (codecid != rtmp_flv_codec_id::aac) {
-    throw std::runtime_error(fmt::format(
-        "Currently, only the AAC audio codec is supported; codecs {} "
-        "are not available.",
-        codecid));
+    throw std::runtime_error(
+        "Currently, only the AAC audio codec is supported");
   }
 
   audio_track_ = std::make_shared<codec::aac_track>();
@@ -69,10 +66,8 @@ void rtmp_demuxer::init_video_track(rtmp_flv_codec_id codecid, int bit_rate) {
   }
 
   if (codecid != rtmp_flv_codec_id::h264) {
-    throw std::runtime_error(fmt::format(
-        "Currently, only the H264 video codec is supported; codecs {} "
-        "are not available.",
-        codecid));
+    throw std::runtime_error(
+        "Currently, only the H264 video codec is supported");
   }
 
   video_track_ = std::make_shared<codec::h264_track>();
