@@ -242,7 +242,7 @@ AMFEncoder &AMFEncoder::operator<<(const AMFValue &obj) {
   }
 
   default:
-    spdlog::error("unsupported amf type {}", amf_type);
+    spdlog::error("unsupported amf type {}", obj.type());
     break;
   }
   return *this;

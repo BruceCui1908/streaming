@@ -182,12 +182,13 @@ public:
       return;
     }
 
-    for (auto i = 0; i < std::strlen(data_) + 1; ++i) {
+    auto len = std::strlen(data_);
+    for (auto i = 0; i < len + 1; ++i) {
       std::cout << data_[i];
     }
     std::cout << std::endl;
 
-    for (auto i = 0; i < std::strlen(data_) + 1; ++i) {
+    for (auto i = 0; i < len + 1; ++i) {
       std::bitset<8> b(data_[i]);
       std::cout << b;
       std::cout << " ";
