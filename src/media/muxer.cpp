@@ -10,8 +10,6 @@ void muxer::translate_frame(const codec::frame::ptr &fr) {
     return;
   }
 
-  spdlog::info("muxer received frame of type {}", fr->get_frame_type());
-
   // TODO
 }
 

@@ -222,7 +222,7 @@ const char *rtmp_protocol::split_rtmp(const char *data, size_t size) {
 
     ptr += header_length + offset + more;
     size -= header_length + offset + more;
-    chunk_data.set_header_len(header_length + offset);
+    chunk_data.set_pkt_header_length(header_length + offset);
 
     // check if meets the received threshold
     bytes_recv_ += static_cast<uint32_t>(chunk_data.size());

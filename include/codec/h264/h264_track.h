@@ -9,10 +9,10 @@ class h264_track : public video_track {
 public:
   using ptr = std::shared_ptr<h264_track>;
 
-  int get_video_height() const override;
-  int get_video_width() const override;
-  float get_video_fps() const override;
-  Codec_Type get_codec() override;
+  int get_video_height() const override { return height_; }
+  int get_video_width() const override { return width_; }
+  float get_video_fps() const override { return fps_; }
+  Codec_Type get_codec() override { return Codec_Type::CodecH264; }
 
   void parse_config(const network::flat_buffer::ptr &) override;
 

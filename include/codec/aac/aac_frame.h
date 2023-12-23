@@ -10,9 +10,8 @@ public:
 
   aac_frame(const network::flat_buffer::ptr &, uint64_t dts);
 
-  bool is_key_frame() const override;
-  bool is_config_frame() const override;
-  int get_frame_type() const override;
+  bool is_key_frame() const override { return false; }
+  bool is_config_frame() const override { return false; }
 };
 
 } // namespace codec

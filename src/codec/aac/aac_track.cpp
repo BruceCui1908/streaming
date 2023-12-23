@@ -3,7 +3,7 @@
 namespace codec {
 
 // https://zhuanlan.zhihu.com/p/525616690?utm_id=0
-static unsigned int samplingFrequencyTable[16] = {
+static uint32_t samplingFrequencyTable[16] = {
     96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050,
     16000, 12000, 11025, 8000,  7350,  0,     0,     0};
 
@@ -108,14 +108,6 @@ static void dump_adts_header(const adts_header &header, uint8_t *out) {
   out[6] |= (header.no_raw_data_blocks_in_frame & 0b00000011); // 2 bits
 }
 
-int aac_track::get_audio_sample_rate() { return sample_rate_; }
-
-int aac_track::get_audio_sample_bit() { return sample_bit_; }
-
-int aac_track::get_audio_channel() { return channel_; }
-
-Codec_Type aac_track::get_codec() { return Codec_Type::CodecAAC; }
-
 void aac_track::parse_config(const network::flat_buffer::ptr &buf) {
   if (!buf) {
     throw std::runtime_error("aac_track cannot parse empty config");
@@ -130,9 +122,9 @@ void aac_track::parse_config(const network::flat_buffer::ptr &buf) {
 
   // the last 3 bits of cfg1 and the first bit of cfg2
   int sample_index = ((cfg1 & 0b00000111) << 1) | (cfg2 >> 7);
-  if (sample_index >= sizeof(samplingFrequencyTable)) {
+  if (sample_index >= std::size(samplingFrequencyTable)) {
     throw std::runtime_error(
-        fmt::format("sample index {} is out of range", sample_index));
+        fmt::format("aac sample index {} is out of range", sample_index));
   }
   sample_rate_ = samplingFrequencyTable[sample_index];
   channel_ = (cfg2 & 0b01111000) >> 3;
@@ -145,7 +137,8 @@ void aac_track::parse_config(const network::flat_buffer::ptr &buf) {
 static frame::ptr prepend_aac_header(const frame::ptr &fr,
                                      const std::string &aac_conf) {
   if (!fr || aac_conf.empty()) {
-    throw std::runtime_error("cannot prepend aac header with empty params");
+    throw std::runtime_error(
+        "Unable to prepend AAC header with empty parameters.");
   }
 
   const auto &ptr = fr->data();
@@ -172,7 +165,7 @@ static frame::ptr prepend_aac_header(const frame::ptr &fr,
 /// all frames passed into this function do not have adts header
 void aac_track::input_frame(const frame::ptr &fr) {
 
-  // first p
+  // TODO
   auto aac_complete_fr = prepend_aac_header(fr, cfg_);
 }
 

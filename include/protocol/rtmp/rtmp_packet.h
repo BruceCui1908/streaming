@@ -138,6 +138,12 @@ enum class rtmp_av_ext_packet_type : uint8_t {
   PacketTypeMPEG2TSSequenceStart = 5,
 };
 
+enum class rtmp_flv_codec_id : int8_t {
+  non_av = -1,
+  h264 = 7,
+  aac = 10,
+};
+
 class rtmp_packet : public std::enable_shared_from_this<rtmp_packet> {
 public:
   using ptr = std::shared_ptr<rtmp_packet>;
@@ -161,12 +167,10 @@ public:
   rtmp_packet &restore_context(const rtmp_packet &);
 
   bool is_video_keyframe() const;
-
   bool is_config_frame() const;
+  rtmp_flv_codec_id get_av_codec_id() const;
 
-  int get_codec_id() const;
-
-  void set_header_len(size_t);
+  void set_pkt_header_length(size_t);
 
   size_t size();
 
@@ -177,7 +181,7 @@ private:
 
 private:
   network::flat_buffer::ptr buf_;
-  size_t header_length_{0};
+  size_t pkt_header_length_{0};
 };
 
 } // namespace rtmp

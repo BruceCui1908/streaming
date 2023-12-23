@@ -217,8 +217,7 @@ AMFEncoder &AMFEncoder::operator<<(const bool b) {
 }
 
 AMFEncoder &AMFEncoder::operator<<(const AMFValue &obj) {
-  int amf_type = (int)obj.type();
-  switch (amf_type) {
+  switch (obj.type()) {
   case AMF0Type::AMF_STRING: {
     *this << obj.as_string();
     break;

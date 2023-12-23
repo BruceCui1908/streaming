@@ -3,14 +3,6 @@
 
 namespace codec {
 
-int h264_track::get_video_height() const { return height_; }
-
-int h264_track::get_video_width() const { return width_; }
-
-float h264_track::get_video_fps() const { return fps_; }
-
-Codec_Type h264_track::get_codec() { return Codec_Type::CodecH264; }
-
 void h264_track::extract_bitstream_sps() {
   if (sps_.empty() || sps_.size() < 4) {
     spdlog::error("sps {} is not valid", sps_);

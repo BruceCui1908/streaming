@@ -9,9 +9,21 @@ public:
   demuxer() = default;
   virtual ~demuxer() = default;
 
-  void set_muxer(const muxer::ptr &mux) { muxer_ = mux; }
+  void set_muxer(const muxer::ptr &mux) {
+    if (!mux) {
+      throw std::runtime_error(
+          "Unable to assign an empty muxer to the demuxer.");
+    }
+    muxer_ = mux;
+  }
 
-  const muxer::ptr &get_muxer() { return muxer_; }
+  const muxer::ptr &get_muxer() {
+    if (!muxer_) {
+      throw std::runtime_error(
+          "The muxer assigned to the demuxer has been lost.");
+    }
+    return muxer_;
+  }
 
 private:
   muxer::ptr muxer_;

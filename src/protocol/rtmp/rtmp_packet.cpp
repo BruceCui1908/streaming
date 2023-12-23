@@ -80,19 +80,15 @@ bool rtmp_packet::is_config_frame() const {
              rtmp_av_ext_packet_type::PacketTypeSequenceStart;
     }
 
-    int codec_id = get_codec_id();
-    if (!codec_id) {
+    auto codec_id = get_av_codec_id();
+    if (codec_id == rtmp_flv_codec_id::non_av) {
       return false;
     }
 
-    auto av_codec_id = (rtmp_video_codec)(codec_id);
+    auto av_codec_id = static_cast<rtmp_video_codec>(codec_id);
     if (av_codec_id == rtmp_video_codec::h264 ||
         av_codec_id == rtmp_video_codec::h265) {
-      if (buf_->unread_length() < 2) {
-        throw std::runtime_error(
-            "not enough data to parse rtmp video tag header");
-      }
-
+      buf_->require_length_or_fail(2);
       // check if the frame is sps/pps
       return (rtmp_h264_packet_type)(buf_->data()[1]) ==
              rtmp_h264_packet_type::h264_config_header;
@@ -103,9 +99,9 @@ bool rtmp_packet::is_config_frame() const {
 
   if (msg_type_id == MSG_AUDIO) {
     buf_->require_length_or_fail(2);
-    int codec_id = get_codec_id();
+    auto codec_id = get_av_codec_id();
 
-    return (rtmp_audio_codec)(codec_id) == rtmp_audio_codec::aac &&
+    return static_cast<rtmp_audio_codec>(codec_id) == rtmp_audio_codec::aac &&
            (rtmp_aac_packet_type)(buf_->data()[1]) ==
                rtmp_aac_packet_type::aac_config_header;
   }
@@ -113,26 +109,28 @@ bool rtmp_packet::is_config_frame() const {
   return false;
 }
 
-int rtmp_packet::get_codec_id() const {
+rtmp_flv_codec_id rtmp_packet::get_av_codec_id() const {
   uint8_t flv_tag_header = buf_->peek_uint8();
-  switch (msg_type_id) {
+  switch (this->msg_type_id) {
   case MSG_VIDEO:
     // use lower 4 bits
-    return (uint8_t)(flv_tag_header & 0x0F);
+    return (rtmp_flv_codec_id)(flv_tag_header & 0x0F);
   case MSG_AUDIO:
     // use higher 4 bits
-    return (uint8_t)(flv_tag_header >> 4);
+    return (rtmp_flv_codec_id)(flv_tag_header >> 4);
   default:
-    return -1;
+    return rtmp_flv_codec_id::non_av;
   }
 }
 
-void rtmp_packet::set_header_len(size_t header_len) {
+void rtmp_packet::set_pkt_header_length(size_t header_len) {
   if (header_len) {
-    header_length_ += header_len;
+    pkt_header_length_ += header_len;
   }
 }
 
-size_t rtmp_packet::size() { return header_length_ += buf_->unread_length(); }
+size_t rtmp_packet::size() {
+  return pkt_header_length_ += buf_->unread_length();
+}
 
 } // namespace rtmp

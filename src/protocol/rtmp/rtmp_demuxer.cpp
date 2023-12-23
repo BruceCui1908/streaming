@@ -10,7 +10,7 @@ namespace rtmp {
 void rtmp_demuxer::init_tracks_with_metadata(
     std::unordered_map<std::string, std::any> &metadata) {
   if (metadata.empty()) {
-    throw std::runtime_error("cannot init tracks with empty meta data");
+    throw std::runtime_error("Cannot initialize tracks with empty metadata");
   }
 
   duration_ = std::any_cast<double>(metadata["duration"]);
@@ -37,54 +37,48 @@ void rtmp_demuxer::init_tracks_with_metadata(
 
   // has video track
   if (videocodecid) {
-    init_video_track(videocodecid, videodatarate * 1024);
+    init_video_track(codec::Codec_Type(videocodecid), videodatarate * 1024);
   }
 
   if (audiocodecid) {
-    init_audio_track(audiocodecid, audiosamplerate, audiochannels,
-                     audiosamplesize, audiodatarate * 1024);
+    init_audio_track(codec::Codec_Type(audiocodecid), audiodatarate * 1024);
   }
 }
 
-void rtmp_demuxer::init_audio_track(int codecid, int sample_rate, int channels,
-                                    int sample_bit, int bit_rate) {
+void rtmp_demuxer::init_audio_track(codec::Codec_Type codecid, int bit_rate) {
   if (audio_rtmp_decoder_) {
     return;
   }
 
-  if (codecid == 10) {
-    codec::aac_track::ptr acc_ptr(new codec::aac_track);
-    audio_track_ = acc_ptr;
+  if (codecid != codec::Codec_Type::CodecAAC) {
+    throw std::runtime_error(fmt::format(
+        "Currently, only the AAC audio codec is supported; codecs {} "
+        "are not available.",
+        codecid));
   }
 
-  if (!audio_track_) {
-    throw std::runtime_error("currently only support AAC");
-  }
-
-  aac_rtmp_decoder::ptr aac_dec_ptr(new aac_rtmp_decoder(audio_track_));
-  audio_rtmp_decoder_ = aac_dec_ptr;
+  audio_track_ = std::make_shared<codec::aac_track>();
   audio_track_->set_bit_rate(bit_rate);
   audio_track_->set_frame_translator(demuxer::get_muxer());
+  audio_rtmp_decoder_ = std::make_shared<aac_rtmp_decoder>(audio_track_);
 }
 
-void rtmp_demuxer::init_video_track(int codecid, int bit_rate) {
+void rtmp_demuxer::init_video_track(codec::Codec_Type codecid, int bit_rate) {
   if (video_rtmp_decoder_) {
     return;
   }
-  // only support h264
-  if (codecid == 7) {
-    codec::h264_track::ptr avc_ptr(new codec::h264_track);
-    video_track_ = avc_ptr;
+
+  if (codecid != codec::Codec_Type::CodecH264) {
+    throw std::runtime_error(fmt::format(
+        "Currently, only the H264 video codec is supported; codecs {} "
+        "are not available.",
+        codecid));
   }
 
-  if (!video_track_) {
-    throw std::runtime_error("currently only support H.264");
-  }
-
-  h264_rtmp_decoder::ptr avc_dec_ptr(new h264_rtmp_decoder(video_track_));
-  video_rtmp_decoder_ = avc_dec_ptr;
+  video_track_ = std::make_shared<codec::h264_track>();
   video_track_->set_bit_rate(bit_rate);
   video_track_->set_frame_translator(demuxer::get_muxer());
+  video_rtmp_decoder_ = std::make_shared<h264_rtmp_decoder>(video_track_);
 }
 
 void rtmp_demuxer::input_rtmp(rtmp_packet::ptr &pkt) {

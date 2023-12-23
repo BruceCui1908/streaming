@@ -17,12 +17,12 @@ static schema_map media_sources_{};
 media_source::media_source(const media_info::ptr &ptr) {
   if (!ptr) {
     throw std::invalid_argument(
-        "cannot build media_source with empty media_info");
+        "Cannot build a media source with empty media info.");
   }
 
   if (!ptr->is_complete()) {
     throw std::invalid_argument(
-        "cannot build media_source with incomplete media_info");
+        "Cannot build a media source with incomplete media info.");
   }
 
   media_info_ = ptr;
@@ -32,7 +32,7 @@ media_source::~media_source() { unregist(); }
 
 void media_source::regist() {
   if (!media_info_) {
-    throw std::runtime_error("cannot regist source with empty media info");
+    throw std::runtime_error("Cannot register a source with empty media info.");
   }
 
   std::lock_guard<std::recursive_mutex> lock(media_sources_mtx_);

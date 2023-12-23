@@ -13,9 +13,8 @@ public:
   track() = default;
   virtual ~track() = default;
 
-  void set_bit_rate(int bit_rate) { bit_rate_ = bit_rate; }
-
-  const int bit_rate() const { return bit_rate_; }
+  void set_bit_rate(uint32_t bit_rate) { bit_rate_ = bit_rate; }
+  uint32_t bit_rate() const { return bit_rate_; }
 
   virtual Codec_Type get_codec() = 0;
 
@@ -28,8 +27,8 @@ public:
 private:
   void translate_frame(const frame::ptr &fr) {
     if (!fr) {
-      spdlog::error(
-          "frame_translator has not been set, cannot translate frame");
+      spdlog::error("The frame_translator has not been set; therefore, the "
+                    "frame cannot be translated.");
       return;
     }
 
@@ -37,7 +36,7 @@ private:
   }
 
 private:
-  int bit_rate_{0};
+  uint32_t bit_rate_{0};
   frame_translator::ptr ft_;
 };
 
@@ -54,9 +53,9 @@ class audio_track : public track {
 public:
   using ptr = std::shared_ptr<audio_track>;
 
-  virtual int get_audio_sample_rate() = 0;
-  virtual int get_audio_sample_bit() = 0;
-  virtual int get_audio_channel() = 0;
+  virtual uint32_t get_audio_sample_rate() = 0;
+  virtual uint32_t get_audio_sample_bit() = 0;
+  virtual uint8_t get_audio_channel() = 0;
 };
 
 } // namespace codec

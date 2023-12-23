@@ -6,7 +6,6 @@
 #include "rtmp_packet.h"
 
 #include <any>
-#include <string>
 #include <unordered_map>
 
 namespace rtmp {
@@ -19,9 +18,8 @@ public:
   ~rtmp_demuxer() = default;
 
   void init_tracks_with_metadata(std::unordered_map<std::string, std::any> &);
-  void init_video_track(int codecid, int bit_rate);
-  void init_audio_track(int codecid, int sample_rate, int channels,
-                        int sample_bit, int bit_rate);
+  void init_video_track(codec::Codec_Type codec_id, int bit_rate);
+  void init_audio_track(codec::Codec_Type codec_id, int bit_rate);
 
   void input_rtmp(rtmp_packet::ptr &);
 

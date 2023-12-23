@@ -37,7 +37,6 @@ public:
     }
     app_ = app;
   }
-
   const std::string &app() const { return app_; }
 
   // parse stream like stream?vhost=test.com&token=abcdef
@@ -116,7 +115,12 @@ public:
 
   const std::string &token() const { return token_; }
 
-  void set_tc_url(const std::string &tc_url) { tc_url_ = tc_url; }
+  void set_tc_url(const std::string &tc_url) {
+    if (tc_url.empty()) {
+      throw std::invalid_argument("tc_url cannot be empty");
+    }
+    tc_url_ = tc_url;
+  }
 
   const std::string &tc_url() const { return tc_url_; }
 
@@ -141,7 +145,6 @@ private:
 
 private:
   std::string info_;
-
   std::string schema_;
   std::string app_;
   std::string vhost_;
