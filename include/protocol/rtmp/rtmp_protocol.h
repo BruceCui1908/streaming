@@ -13,74 +13,70 @@
 #include <utility>
 
 namespace rtmp {
-class rtmp_protocol {
+class rtmp_protocol
+{
 public:
-  virtual ~rtmp_protocol() = default;
+    virtual ~rtmp_protocol() = default;
 
 protected:
-  rtmp_protocol();
+    rtmp_protocol();
 
-  void on_parse_rtmp(network::flat_buffer &);
+    void on_parse_rtmp(network::flat_buffer &);
 
-  virtual void send(const char *, size_t, bool is_async = false,
-                    bool is_close = false) = 0;
-
-private:
-  const char *handle_C0C1(const char *, size_t);
-  const char *handle_C2(const char *, size_t);
-  const char *split_rtmp(const char *, size_t);
-  void handle_chunk(rtmp_packet::ptr);
-
-  void on_process_cmd(AMFDecoder &);
-  void on_amf_connect(AMFDecoder &);
-  void on_amf_createStream(AMFDecoder &);
-  void on_amf_publish(AMFDecoder &);
-  void on_process_metadata(AMFDecoder &);
-
-  void send_rtmp(uint8_t msg_type_id, uint32_t msg_stream_id,
-                 const std::string &data, uint32_t time_stamp,
-                 int chunk_stream_id);
-
-  void send_acknowledgement(uint32_t);
-  void set_chunk_size(uint32_t);
-  void set_peer_bandwidth(uint32_t);
+    virtual void send(const char *, size_t, bool is_async = false, bool is_close = false) = 0;
 
 private:
-  // P13
-  int chunk_stream_id_{0};
-  int msg_stream_id_{0};
+    const char *handle_C0C1(const char *, size_t);
+    const char *handle_C2(const char *, size_t);
+    const char *split_rtmp(const char *, size_t);
+    void handle_chunk(rtmp_packet::ptr);
 
-  size_t chunk_size_in_ = kDefaultChunkLength;
-  size_t chunk_size_out_ = kDefaultChunkLength;
+    void on_process_cmd(AMFDecoder &);
+    void on_amf_connect(AMFDecoder &);
+    void on_amf_createStream(AMFDecoder &);
+    void on_amf_publish(AMFDecoder &);
+    void on_process_metadata(AMFDecoder &);
 
-  std::unordered_map<
-      int, std::pair<rtmp_packet::ptr /* now */, rtmp_packet::ptr /* last */>>
-      chunked_data_map_{};
+    void send_rtmp(uint8_t msg_type_id, uint32_t msg_stream_id, const std::string &data, uint32_t time_stamp, int chunk_stream_id);
 
-  // for sending rtmp packet
-  util::resource_pool<network::buffer_raw>::ptr pool_;
-  std::function<const char *(const char *, size_t)> next_step_func_;
+    void send_acknowledgement(uint32_t);
+    void set_chunk_size(uint32_t);
+    void set_peer_bandwidth(uint32_t);
 
-  double transaction_id_ = 0;
+private:
+    // P13
+    int chunk_stream_id_{0};
+    int msg_stream_id_{0};
 
-  // Acknowledgement
-  uint64_t bytes_sent_{0};
-  uint64_t bytes_sent_last_{0};
-  uint64_t bytes_recv_{0};
-  uint64_t bytes_recv_last_{0};
-  uint32_t windows_size_{0};
+    size_t chunk_size_in_ = kDefaultChunkLength;
+    size_t chunk_size_out_ = kDefaultChunkLength;
 
-  // media info
-  media::media_info::ptr media_info_;
+    std::unordered_map<int, std::pair<rtmp_packet::ptr /* now */, rtmp_packet::ptr /* last */>> chunked_data_map_{};
 
-  // media source
-  rtmp_media_source::ptr rtmp_source_;
+    // for sending rtmp packet
+    util::resource_pool<network::buffer_raw>::ptr pool_;
+    std::function<const char *(const char *, size_t)> next_step_func_;
 
-  // ownership
-  std::shared_ptr<void> src_ownership_;
+    double transaction_id_ = 0;
 
-  // store metadata
-  std::unordered_map<std::string, std::any> meta_data_{};
+    // Acknowledgement
+    uint64_t bytes_sent_{0};
+    uint64_t bytes_sent_last_{0};
+    uint64_t bytes_recv_{0};
+    uint64_t bytes_recv_last_{0};
+    uint32_t windows_size_{0};
+
+    // media info
+    media::media_info::ptr media_info_;
+
+    // media source
+    rtmp_media_source::ptr rtmp_source_;
+
+    // ownership
+    std::shared_ptr<void> src_ownership_;
+
+    // store metadata
+    std::unordered_map<std::string, std::any> meta_data_{};
 };
 
 } // namespace rtmp

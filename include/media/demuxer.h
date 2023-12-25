@@ -4,29 +4,32 @@
 
 namespace media {
 
-class demuxer {
+class demuxer
+{
 public:
-  demuxer() = default;
-  virtual ~demuxer() = default;
+    demuxer() = default;
+    virtual ~demuxer() = default;
 
-  void set_muxer(const muxer::ptr &mux) {
-    if (!mux) {
-      throw std::runtime_error(
-          "Unable to assign an empty muxer to the demuxer.");
+    void set_muxer(const muxer::ptr &mux)
+    {
+        if (!mux)
+        {
+            throw std::runtime_error("Unable to assign an empty muxer to the demuxer.");
+        }
+        muxer_ = mux;
     }
-    muxer_ = mux;
-  }
 
-  const muxer::ptr &get_muxer() {
-    if (!muxer_) {
-      throw std::runtime_error(
-          "The muxer assigned to the demuxer has been lost.");
+    const muxer::ptr &get_muxer()
+    {
+        if (!muxer_)
+        {
+            throw std::runtime_error("The muxer assigned to the demuxer has been lost.");
+        }
+        return muxer_;
     }
-    return muxer_;
-  }
 
 private:
-  muxer::ptr muxer_;
+    muxer::ptr muxer_;
 };
 
 } // namespace media

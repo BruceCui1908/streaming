@@ -1,2 +1,4 @@
 .vscode
 debug.sh
+debug.bat
+exec.bat
