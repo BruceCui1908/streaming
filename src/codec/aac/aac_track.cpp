@@ -26,7 +26,7 @@ public:
     unsigned int no_raw_data_blocks_in_frame;    // 2 bits, number of AAC frames(RDBs) in ADTS
                                                  // frame minus 1, for maximum compatibility,
                                                  // always use 1 AAC frame per adts frame
-    unsigned int crc;                            // 16 bits, crc if protection_absent is 0
+                                                 // unsigned int crc; 16 bits, crc if protection_absent is 0
 };
 
 static void parse_aac_config(const std::string &config, adts_header &adts)
@@ -149,7 +149,7 @@ static frame::ptr prepend_aac_header(const frame::ptr &fr, const std::string &aa
     header.aac_frame_length = static_cast<decltype(header.aac_frame_length)>(ptr->unread_length() + kAdtsHeaderLength);
 
     char adts_head[7] = {0};
-    dump_adts_header(header, (uint8_t *)adts_head);
+    dump_adts_header(header, reinterpret_cast<uint8_t *>(adts_head));
 
     // create a new frame
     auto aac_ptr = network::flat_buffer::create();

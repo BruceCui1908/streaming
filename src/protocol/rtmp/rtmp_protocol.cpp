@@ -52,7 +52,7 @@ const char *rtmp_protocol::handle_C0C1(const char *data, size_t size)
 
     // send S1
     rtmp_handshake s1;
-    send((char *)(&s1), sizeof(s1));
+    send(reinterpret_cast<char *>(&s1), sizeof(s1));
 
     // send S2
     send(data + 1, kC1HandshakeSize);
@@ -585,14 +585,14 @@ void rtmp_protocol::send_rtmp(
 void rtmp_protocol::send_acknowledgement(uint32_t size)
 {
     size = htonl(size);
-    std::string ack((char *)&size, sizeof(uint32_t));
+    std::string ack(reinterpret_cast<char *>(&size), sizeof(uint32_t));
     send_rtmp(MSG_ACK, msg_stream_id_, ack, 0, CHUNK_NETWORK);
 }
 
 void rtmp_protocol::set_chunk_size(uint32_t size)
 {
     uint32_t len = htonl(size);
-    std::string set_chunk((char *)&len, 4);
+    std::string set_chunk(reinterpret_cast<char *>(&len), 4);
     send_rtmp(MSG_SET_CHUNK, msg_stream_id_, set_chunk, 0, CHUNK_NETWORK);
     chunk_size_out_ = size;
 }
@@ -600,7 +600,7 @@ void rtmp_protocol::set_chunk_size(uint32_t size)
 void rtmp_protocol::set_peer_bandwidth(uint32_t size)
 {
     size = htonl(size);
-    std::string set_peer_bd((char *)&size, 4);
+    std::string set_peer_bd(reinterpret_cast<char *>(&size), 4);
     set_peer_bd.push_back((char)0x02);
     send_rtmp(MSG_SET_PEER_BW, msg_stream_id_, set_peer_bd, 0, CHUNK_NETWORK);
 }
@@ -644,7 +644,7 @@ void rtmp_protocol::on_process_metadata(AMFDecoder &dec)
 
             while (true)
             {
-                key = dec.load_key();
+                key = std::move(dec.load_key());
                 if (key.empty())
                 {
                     break;

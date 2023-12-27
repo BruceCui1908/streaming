@@ -245,7 +245,7 @@ AMFEncoder &AMFEncoder::operator<<(const char *s)
     buf += char(AMF0Type::AMF_STRING);
     auto len = std::strlen(s);
     uint16_t str_len = htons((uint16_t)len);
-    buf.append((char *)&str_len, 2);
+    buf.append(reinterpret_cast<char *>(&str_len), 2);
     buf += s;
     return *this;
 }
@@ -272,9 +272,9 @@ AMFEncoder &AMFEncoder::operator<<(const double num)
     uint64_t encoded = 0;
     memcpy(&encoded, &num, 8);
     uint32_t val = htonl(encoded >> 32);
-    buf.append((char *)&val, 4);
+    buf.append(reinterpret_cast<char *>(&val), 4);
     val = htonl(encoded & 0xFFFFFFFF);
-    buf.append((char *)&val, 4);
+    buf.append(reinterpret_cast<char *>(&val), 4);
     return *this;
 }
 
@@ -334,7 +334,7 @@ void AMFEncoder::clear()
 void AMFEncoder::write_key(const std::string &s)
 {
     uint16_t str_len = htons((uint16_t)s.size());
-    buf.append((char *)&str_len, 2);
+    buf.append(reinterpret_cast<char *>(&str_len), 2);
     buf += s;
 }
 

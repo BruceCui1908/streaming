@@ -16,9 +16,9 @@ void h264_track::extract_bitstream_sps()
     std::memset(&tGetBitBuf, 0, sizeof(tGetBitBuf));
     std::memset(&tH264SpsInfo, 0, sizeof(tH264SpsInfo));
 
-    tGetBitBuf.pu8Buf = (uint8_t *)sps_.data() + 1;
+    tGetBitBuf.pu8Buf = reinterpret_cast<uint8_t *>(sps_.data()) + 1;
     tGetBitBuf.iBufSize = (int)(sps_.size() - 1);
-    if (0 != h264DecSeqParameterSet((void *)&tGetBitBuf, &tH264SpsInfo))
+    if (0 != h264DecSeqParameterSet(static_cast<void *>(&tGetBitBuf), &tH264SpsInfo))
     {
         throw std::runtime_error("cannot parse sps");
     }

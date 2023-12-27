@@ -40,7 +40,7 @@ void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt)
     buf->consume_or_fail(2);
 
     // https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/flvdec.c 1293
-    uint8_t *cts_ptr = (uint8_t *)(buf->data());
+    uint8_t *cts_ptr = reinterpret_cast<uint8_t *>(buf->data());
     int32_t cts = (((cts_ptr[0] << 16) | (cts_ptr[1] << 8) | (cts_ptr[2])) + 0xff800000) ^ 0xff800000;
     uint32_t pts = pkt->time_stamp + cts;
     buf->consume_or_fail(3);

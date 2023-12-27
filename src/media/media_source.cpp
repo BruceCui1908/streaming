@@ -145,7 +145,7 @@ std::shared_ptr<void> media_source::get_ownership()
     }
 
     std::weak_ptr<media_source> weak_self = shared_from_this();
-    return std::shared_ptr<void>((void *)(0x01), [weak_self](void *ptr) {
+    return std::shared_ptr<void>(reinterpret_cast<void *>(0x01), [weak_self](void *ptr) {
         auto strong_self = weak_self.lock();
         if (strong_self)
         {
