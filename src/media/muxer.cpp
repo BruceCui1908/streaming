@@ -11,7 +11,6 @@ void muxer::translate_frame(const codec::frame::ptr &fr)
     {
         return;
     }
-
     // TODO
 }
 

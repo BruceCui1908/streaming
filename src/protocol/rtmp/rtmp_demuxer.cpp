@@ -83,12 +83,10 @@ void rtmp_demuxer::input_rtmp(rtmp_packet::ptr &pkt)
 
     if (pkt->msg_type_id == MSG_VIDEO && video_rtmp_decoder_)
     {
-        // spdlog::debug("received video data, size = {}", pkt->msg_length);
         video_rtmp_decoder_->input_rtmp(pkt);
     }
     else if (pkt->msg_type_id == MSG_AUDIO && audio_rtmp_decoder_)
     {
-        spdlog::debug("received audio data, size = {}", pkt->msg_length);
         audio_rtmp_decoder_->input_rtmp(pkt);
     }
 

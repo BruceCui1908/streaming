@@ -38,8 +38,17 @@ void aac_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt)
 
     buf->consume_or_fail(2);
 
-    auto aac_ptr = std::make_shared<codec::aac_frame>(buf, pkt->time_stamp);
-    aac_track_ptr->input_frame(aac_ptr);
+    /// Based on testing, neither OBS nor FFmpeg would send AAC with ADTS header.
+    auto adts_head = aac_track_ptr->extract_aac_config();
+    adts_head.aac_frame_length = buf->unread_length() + codec::kAdtsHeaderLength;
+    auto adts_raw = aac_track_ptr->dump_adts_header(adts_head);
+
+    auto aac_data_buf = network::flat_buffer::create(adts_raw.size() + buf->unread_length());
+    aac_data_buf->write(adts_raw.data(), adts_raw.size());
+    aac_data_buf->write(buf->data(), buf->unread_length());
+    auto aac_full_frame = std::make_shared<codec::aac_frame>(aac_data_buf, pkt->time_stamp);
+
+    track_ptr->input_frame(aac_full_frame);
 }
 
 } // namespace rtmp

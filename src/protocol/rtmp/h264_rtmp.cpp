@@ -50,6 +50,8 @@ void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt)
 /// @brief split rtmp frame by frame length, not prefix
 void h264_rtmp_decoder::split_nal_frame(const network::flat_buffer::ptr &buf, uint32_t dts, uint32_t pts)
 {
+    static_assert(sizeof(codec::kH264HeaderPrefix) == 5);
+
     const auto track_ptr = get_track();
 
     while (buf->unread_length() >= 4)
@@ -60,8 +62,9 @@ void h264_rtmp_decoder::split_nal_frame(const network::flat_buffer::ptr &buf, ui
             break;
         }
 
-        auto ptr = network::flat_buffer::create();
-        ptr->write("\x00\x00\x00\x01", 4);
+        auto h264_frame_len = sizeof(codec::kH264HeaderPrefix) - 1 + frame_len;
+        auto ptr = network::flat_buffer::create(h264_frame_len);
+        ptr->write(codec::kH264HeaderPrefix, sizeof(codec::kH264HeaderPrefix) - 1);
         ptr->write(buf->data(), frame_len);
         buf->consume_or_fail(frame_len);
 

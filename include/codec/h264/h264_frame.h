@@ -4,6 +4,8 @@
 
 namespace codec {
 
+static constexpr char kH264HeaderPrefix[] = "\x00\x00\x00\x01";
+
 class h264_frame : public codec::frame
 {
 public:

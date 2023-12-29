@@ -367,6 +367,63 @@ public:
         write_index_ += n;
     }
 
+    // prepend data
+    void prepend(char *data, size_t size)
+    {
+        if (!data || !size)
+        {
+            return;
+        }
+
+        // 0 ---------- size ---------- read_index_
+        if (read_index_ >= size)
+        {
+            // if the size of consumed data length is greater than the size of prepended data, then reuse the consumed memory
+            read_index_ -= size;
+            std::memcpy(data_ + read_index_, data, size);
+            return;
+        }
+
+        auto available_bytes = writable_bytes();
+        if (available_bytes >= size)
+        {
+            /**
+             If the available size of the current buffer is greater than the size
+             of the prepended data, simply shift the existing data to the right.
+             */
+            std::memmove(data_ + read_index_ + size, data_ + read_index_, unread_length());
+            std::memcpy(data_ + read_index_, data, size);
+            // read_index no need to change
+            write_index_ += size;
+            return;
+        }
+
+        auto offset = size - read_index_;
+        if (available_bytes >= offset)
+        {
+            std::memmove(data_ + read_index_ + offset, data_ + read_index_, unread_length());
+            read_index_ = 0;
+            write_index_ += offset;
+            std::memcpy(data_ + read_index_, data, size);
+            return;
+        }
+
+        // The current buffer is unable to accommodate both the prepended data and the existing data
+        size_t capacity = capacity_ << 1 + size;
+        char *temp = new char[capacity];
+        std::memcpy(temp, data, size);
+        std::memcpy(temp + size, data_ + read_index_, unread_length());
+        if (data_)
+        {
+            delete[] data_;
+            data_ = nullptr;
+        }
+        capacity_ = capacity;
+        read_index_ = 0;
+        write_index_ = size + unread_length();
+        data_ = temp;
+    }
+
 private:
     char *begin()
     {

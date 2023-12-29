@@ -117,6 +117,10 @@ bool rtmp_packet::is_config_frame() const
         buf_->require_length_or_fail(2);
         auto codec_id = get_av_codec_id();
 
+        /**
+         In simple terms, if the first packet is AAC and the second packet is 00, then it is an AAC configuration packet.
+         If the second packet is 01, it is a raw AAC audio packet.
+         */
         return static_cast<rtmp_audio_codec>(codec_id) == rtmp_audio_codec::aac &&
                (rtmp_aac_packet_type)(buf_->data()[1]) == rtmp_aac_packet_type::aac_config_header;
     }

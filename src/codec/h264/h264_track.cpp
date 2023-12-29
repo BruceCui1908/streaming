@@ -72,13 +72,15 @@ void h264_track::parse_config(const network::flat_buffer::ptr &buf)
 
 void h264_track::encapsulate_config_frame(const std::string &config)
 {
+    static_assert(sizeof(kH264HeaderPrefix) == 5);
     if (config.empty())
     {
         return;
     }
 
-    auto config_ptr = network::flat_buffer::create();
-    config_ptr->write("\x00\x00\x00\x01", 4);
+    auto config_frame_len = sizeof(kH264HeaderPrefix) - 1 + config.size();
+    auto config_ptr = network::flat_buffer::create(config_frame_len);
+    config_ptr->write(kH264HeaderPrefix, sizeof(kH264HeaderPrefix) - 1);
     config_ptr->write(config.data(), config.size());
 
     auto config_frame = h264_frame::create();
