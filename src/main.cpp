@@ -3,6 +3,7 @@
 
 #include "network/tcp_server.h"
 #include "protocol/rtmp/rtmp_session.h"
+#include "protocol/http/http_session.h"
 
 int main()
 {
@@ -12,10 +13,12 @@ int main()
 
     boost::asio::io_context io_context;
     auto rtmpserver = network::tcp_server::create(io_context, 1935);
+    auto httpserver = network::tcp_server::create(io_context, 80);
 
     try
     {
         rtmpserver->start<rtmp::rtmp_session>();
+        httpserver->start<http::http_session>();
     }
     catch (std::exception &ex)
     {
@@ -35,6 +38,7 @@ int main()
         {
             spdlog::error("io_context received exception, error = {}", ex.what());
             rtmpserver->restart();
+            httpserver->restart();
         }
     }
 
