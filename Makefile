@@ -22,6 +22,7 @@ INC_DIRS := $(shell find $(HEADER_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 STD_FLAG := -std=c++17
+W_FLAGS := -Wall -Wextra -Wconversion -Wsign-conversion -Wshadow -Wpedantic
 LDFLAGS := -L/usr/lib -lstdc++ -lm -lpthread -lspdlog
 
 # The -MMD and -MP flags together generate Makefiles for us!
@@ -35,12 +36,12 @@ $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) -c $< -o $@
 
 # Build step for C++ source
 $(BUILD_DIR)/%.cpp.o: %.cpp
 	mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 
 .PHONY: clean

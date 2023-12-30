@@ -22,6 +22,8 @@ public:
 
     static ptr create(boost::asio::io_context &, const uint16_t, ip_type ipType = ip_type::ipv4);
 
+    ~tcp_server();
+
     const std::string &info() override;
 
     void restart() override;
@@ -37,7 +39,6 @@ public:
 
             auto session_ptr = SessionProtocol::create(std::move(sock), session_manager_->generate_prefix(), session_manager_);
             session_manager_->add(session_ptr);
-            spdlog::debug("{} created!", session_ptr->id());
             return session_ptr;
         };
 
@@ -53,6 +54,8 @@ private:
     void do_accept();
 
 private:
+    boost::asio::io_context &io_context_;
+
     /// The signal_set is used to register for process termination notifications.
     boost::asio::signal_set signals_;
 

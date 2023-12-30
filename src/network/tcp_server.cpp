@@ -12,16 +12,20 @@ tcp_server::ptr tcp_server::create(boost::asio::io_context &io_context, const ui
 
 tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port, ip_type ipType)
     : server(port, sock_type::tcp, ipType)
-    , signals_{io_context}
-    , acceptor_{io_context}
+    , io_context_{io_context}
+    , signals_{io_context_}
+    , acceptor_{io_context_}
 {
 
+    // Register to handle the signals that indicate when the server should exit.
+    // It is safe to register for the same signal multiple times in a program,
+    // provided all registration for the specified signal is made through Asio.
     // register ctrl-c and kill
     signals_.add(SIGINT);
     signals_.add(SIGTERM);
     start_signal_listener();
 
-    tcp::resolver resolver(io_context);
+    tcp::resolver resolver(io_context_);
     auto result = resolver.resolve(ipType == ip_type::ipv4 ? kDefaultLocalIpv4 : kDefaultLocalIpv6, std::to_string(port));
     if (result.empty())
     {
@@ -41,6 +45,11 @@ tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port,
     spdlog::info("{} created", info());
 }
 
+tcp_server::~tcp_server()
+{
+    spdlog::info("{} destroyed", info());
+}
+
 void tcp_server::do_accept()
 {
     if (!acceptor_.is_open())
@@ -48,12 +57,11 @@ void tcp_server::do_accept()
         return;
     }
 
-    acceptor_.async_accept([this](boost::system::error_code ec, tcp::socket sock) {
+    acceptor_.async_accept(boost::asio::make_strand(io_context_), [this](boost::system::error_code ec, tcp::socket sock) {
         // Check whether the server was stopped by a signal before this
         // completion handler had a chance to run.
         if (!acceptor_.is_open())
         {
-            spdlog::warn("acceptor closed in {}, about to return", info());
             return;
         }
 
@@ -90,6 +98,11 @@ void tcp_server::start_signal_listener()
 {
     signals_.async_wait([this](boost::system::error_code, int signo) {
         spdlog::info("{} received signal {}", info(), signo);
+        if (io_context_.stopped())
+        {
+            io_context_.stop();
+        }
+
         // close the acceptor
         acceptor_.close();
         // close the session map

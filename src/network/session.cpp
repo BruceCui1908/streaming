@@ -165,11 +165,6 @@ session_manager::ptr session_manager::create(std::string prefix)
     return std::shared_ptr<session_manager>(new session_manager(std::move(prefix)));
 }
 
-session_manager::~session_manager()
-{
-    spdlog::debug("session manager {} destroyed!", session_prefix_);
-}
-
 session_manager::session_manager(std::string session_prefix)
     : session_prefix_{std::move(session_prefix)}
 {}

@@ -74,7 +74,7 @@ public:
 
     static ptr create(std::string);
 
-    ~session_manager();
+    ~session_manager() = default;
 
     session_manager(const session_manager &) = delete;
     session_manager &operator=(const session_manager &) = delete;

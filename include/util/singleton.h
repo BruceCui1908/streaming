@@ -2,6 +2,8 @@
 
 #include "BS_thread_pool.hpp"
 
+namespace util {
+
 template<typename T, typename = typename std::enable_if_t<std::is_default_constructible_v<T>>>
 class singleton
 {
@@ -20,7 +22,7 @@ public:
     static T &instance()
     {
         static std::shared_ptr<singleton> ptr(new singleton);
-        return ptr_->t;
+        return ptr->t;
     }
 
 private:
@@ -31,3 +33,5 @@ private:
 };
 
 using bs_thread_pool = singleton<BS::thread_pool>;
+
+} // namespace util

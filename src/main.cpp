@@ -1,9 +1,7 @@
-
-#include <spdlog/spdlog.h>
-
 #include "network/tcp_server.h"
 #include "protocol/rtmp/rtmp_session.h"
 #include "protocol/http/http_session.h"
+#include "util/singleton.h"
 
 int main()
 {
@@ -26,21 +24,32 @@ int main()
         return EXIT_FAILURE;
     }
 
-    for (;;)
+    auto &thread_pool = util::bs_thread_pool::instance();
+    auto cpus = thread_pool.get_thread_count();
+
+    for (auto i = 0; i < cpus; ++i)
     {
-        try
-        {
-            io_context.run();
-            spdlog::info("io_context exited normally");
-            break;
-        }
-        catch (std::exception &ex)
-        {
-            spdlog::error("io_context received exception, error = {}", ex.what());
-            rtmpserver->restart();
-            httpserver->restart();
-        }
+        thread_pool.detach_task([&]() {
+            for (;;)
+            {
+                try
+                {
+                    io_context.run();
+                    break;
+                }
+                catch (std::exception &ex)
+                {
+                    spdlog::error("io_context received exception, error = {}", ex.what());
+                    rtmpserver->restart();
+                    httpserver->restart();
+                }
+            }
+        });
     }
+
+    thread_pool.wait();
+
+    spdlog::info("io_context exited normally");
 
     return EXIT_SUCCESS;
 }

@@ -9,7 +9,7 @@ http_session::ptr http_session::create(SESSION_CONSTRUCTOR_PARAMS)
 
 void http_session::start()
 {
-    spdlog::debug("http session on [{}] started!", id());
+    spdlog::debug("http session [{}] started!", id());
     do_read();
 }
 
