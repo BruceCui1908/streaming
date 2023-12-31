@@ -27,7 +27,7 @@ public:
         return Codec_Type::CodecH264;
     }
 
-    void parse_config(const network::flat_buffer::ptr &) override;
+    void parse_config(network::flat_buffer &) override;
 
     const std::string &get_sps() const
     {

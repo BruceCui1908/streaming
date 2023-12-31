@@ -4,13 +4,9 @@
 
 namespace media {
 
-void muxer::translate_frame(const codec::frame::ptr &fr)
+void muxer::translate_frame(const codec::frame &fr)
 {
     // all protocol translation are implemented here
-    if (!fr)
-    {
-        return;
-    }
     // TODO
 }
 

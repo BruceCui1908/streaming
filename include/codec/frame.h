@@ -87,7 +87,7 @@ public:
     frame_translator() = default;
     virtual ~frame_translator() = default;
 
-    virtual void translate_frame(const frame::ptr &) = 0;
+    virtual void translate_frame(const frame &) = 0;
 };
 
 } // namespace codec

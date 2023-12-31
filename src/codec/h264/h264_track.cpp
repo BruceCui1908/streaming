@@ -30,36 +30,31 @@ void h264_track::extract_bitstream_sps()
 }
 
 // https://www.jianshu.com/p/4f95617f30d0
-void h264_track::parse_config(const network::flat_buffer::ptr &buf)
+void h264_track::parse_config(network::flat_buffer &buf)
 {
-    if (!buf)
-    {
-        throw std::runtime_error("h264_track cannot parse empty config");
-    }
-
     // byte[0] version
     // byte[1] avc profile
     // byte[2] avc compatibility
     // byte[3] avc level
     // byte[4] FF
     // byte[5] E1
-    buf->consume_or_fail(6);
+    buf.consume_or_fail(6);
 
     // byte[6] byte[7] sps length
-    auto sps_size = buf->read_uint16();
-    buf->require_length_or_fail(sps_size);
+    auto sps_size = buf.read_uint16();
+    buf.require_length_or_fail(sps_size);
 
-    sps_.assign(buf->data(), sps_size);
-    buf->consume_or_fail(sps_size);
+    sps_.assign(buf.data(), sps_size);
+    buf.consume_or_fail(sps_size);
 
     // skip the byte 01
-    buf->consume_or_fail(1);
+    buf.consume_or_fail(1);
 
-    auto pps_size = buf->read_uint16();
-    buf->require_length_or_fail(pps_size);
+    auto pps_size = buf.read_uint16();
+    buf.require_length_or_fail(pps_size);
 
-    pps_.assign(buf->data(), pps_size);
-    buf->consume_or_fail(pps_size);
+    pps_.assign(buf.data(), pps_size);
+    buf.consume_or_fail(pps_size);
 
     extract_bitstream_sps();
 
@@ -83,11 +78,11 @@ void h264_track::encapsulate_config_frame(const std::string &config)
     config_ptr->write(kH264HeaderPrefix, sizeof(kH264HeaderPrefix) - 1);
     config_ptr->write(config.data(), config.size());
 
-    auto config_frame = h264_frame::create();
-    config_frame->set_prefix_size(4);
-    config_frame->set_dts(0);
-    config_frame->set_pts(0);
-    config_frame->set_data(config_ptr);
+    h264_frame config_frame;
+    config_frame.set_prefix_size(4);
+    config_frame.set_dts(0);
+    config_frame.set_pts(0);
+    config_frame.set_data(config_ptr);
     track::input_frame(config_frame);
 }
 

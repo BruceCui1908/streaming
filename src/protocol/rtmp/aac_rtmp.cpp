@@ -32,7 +32,7 @@ void aac_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt)
     if (pkt->is_config_frame())
     {
         buf->consume_or_fail(2);
-        aac_track_ptr->parse_config(buf);
+        aac_track_ptr->parse_config(*buf);
         return;
     }
 
@@ -46,9 +46,9 @@ void aac_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt)
     auto aac_data_buf = network::flat_buffer::create(adts_raw.size() + buf->unread_length());
     aac_data_buf->write(adts_raw.data(), adts_raw.size());
     aac_data_buf->write(buf->data(), buf->unread_length());
-    auto aac_full_frame = std::make_shared<codec::aac_frame>(aac_data_buf, pkt->time_stamp);
 
-    track_ptr->input_frame(aac_full_frame);
+    codec::aac_frame af(aac_data_buf, pkt->time_stamp);
+    track_ptr->input_frame(af);
 }
 
 } // namespace rtmp

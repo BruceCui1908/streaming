@@ -16,7 +16,7 @@ public:
         return std::shared_ptr<muxer>(new muxer);
     }
 
-    void translate_frame(const codec::frame::ptr &) override;
+    void translate_frame(const codec::frame &) override;
 
 private:
     muxer() = default;

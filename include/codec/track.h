@@ -25,22 +25,11 @@ public:
 
     virtual Codec_Type get_codec() = 0;
 
-    virtual void parse_config(const network::flat_buffer::ptr &) = 0;
+    virtual void parse_config(network::flat_buffer &) = 0;
 
-    virtual void input_frame(const frame::ptr &fr)
+    virtual void input_frame(const frame &fr)
     {
-        translate_frame(fr);
-    }
-
-    void set_frame_translator(const frame_translator::ptr &ft)
-    {
-        ft_ = ft;
-    }
-
-private:
-    void translate_frame(const frame::ptr &fr)
-    {
-        if (!fr)
+        if (!ft_)
         {
             spdlog::error("The frame_translator has not been set; therefore, the "
                           "frame cannot be translated.");
@@ -48,6 +37,11 @@ private:
         }
 
         ft_->translate_frame(fr);
+    }
+
+    void set_frame_translator(const frame_translator::ptr &ft)
+    {
+        ft_ = ft;
     }
 
 private:

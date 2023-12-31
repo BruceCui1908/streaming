@@ -58,7 +58,7 @@ public:
         return Codec_Type::CodecAAC;
     }
 
-    void parse_config(const network::flat_buffer::ptr &) override;
+    void parse_config(network::flat_buffer &) override;
 
     adts_header extract_aac_config();
 

@@ -32,7 +32,7 @@ void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt)
             throw std::runtime_error("The video track cannot be cast to h264 track in h264_rtmp_decoder");
         }
 
-        h264_track_ptr->parse_config(buf);
+        h264_track_ptr->parse_config(*buf);
         return;
     }
 
@@ -68,13 +68,13 @@ void h264_rtmp_decoder::split_nal_frame(const network::flat_buffer::ptr &buf, ui
         ptr->write(buf->data(), frame_len);
         buf->consume_or_fail(frame_len);
 
-        auto frame_ptr = codec::h264_frame::create();
-        frame_ptr->set_prefix_size(4);
-        frame_ptr->set_dts(dts);
-        frame_ptr->set_pts(pts);
-        frame_ptr->set_data(ptr);
+        codec::h264_frame hr;
+        hr.set_prefix_size(4);
+        hr.set_dts(dts);
+        hr.set_pts(pts);
+        hr.set_data(ptr);
 
-        track_ptr->input_frame(frame_ptr);
+        track_ptr->input_frame(hr);
     }
 
     if (buf->unread_length())

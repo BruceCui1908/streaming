@@ -2,16 +2,11 @@
 
 namespace codec {
 
-void aac_track::parse_config(const network::flat_buffer::ptr &buf)
+void aac_track::parse_config(network::flat_buffer &buf)
 {
-    if (!buf)
-    {
-        throw std::runtime_error("aac_track cannot parse empty config");
-    }
+    buf.require_length_or_fail(2);
 
-    buf->require_length_or_fail(2);
-
-    cfg_.assign(buf->data(), buf->unread_length());
+    cfg_.assign(buf.data(), buf.unread_length());
 
     uint8_t cfg1 = cfg_[0];
     uint8_t cfg2 = cfg_[1];
@@ -25,7 +20,7 @@ void aac_track::parse_config(const network::flat_buffer::ptr &buf)
     sample_rate_ = samplingFrequencyTable[sample_index];
     channel_ = (cfg2 & 0b01111000) >> 3;
 
-    spdlog::debug("successfully parses aac config, sample_index = {}, samplerate "
+    spdlog::debug("successfully parsed aac config, sample_index = {}, samplerate "
                   "= {}, channel = {}",
         sample_index, sample_rate_, channel_);
 }
