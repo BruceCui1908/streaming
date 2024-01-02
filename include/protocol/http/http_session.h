@@ -17,6 +17,8 @@ public:
 
     void start() override;
 
+    void send(const char *, size_t, bool is_async = false, bool is_close = false) override;
+
 private:
     http_session(SESSION_CONSTRUCTOR_PARAMS);
 

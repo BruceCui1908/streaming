@@ -1,5 +1,7 @@
 #pragma once
+
 #include <chrono>
+#include <string>
 
 namespace util {
 // get current timestamp in microsecond
@@ -18,4 +20,5 @@ void set_be24(void *, uint32_t);
 void set_be32(void *, uint32_t);
 void set_le32(void *, uint32_t);
 
+std::string http_date();
 } // namespace util

@@ -1,6 +1,9 @@
 #include "util.h"
 
+#include <ctime>
+
 namespace util {
+
 uint64_t current_micros()
 {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -53,6 +56,14 @@ void set_le32(void *p, uint32_t val)
     data[2] = val >> 16;
     data[1] = val >> 8;
     data[0] = val;
+}
+
+std::string http_date()
+{
+    char buf[64];
+    std::time_t tt = std::time(nullptr);
+    std::strftime(buf, sizeof(buf), "%a, %b %d %Y %H:%M:%S GMT", std::gmtime(&tt));
+    return buf;
 }
 
 } // namespace util

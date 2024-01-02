@@ -70,7 +70,7 @@ public:
             start = std::distance(stream.begin(), it);
         }
 
-        auto stream_pos = stream.find_first_of('?', start);
+        auto stream_pos = stream.find('?', start);
         // if not ?, then the whole string is stream id
         if (stream_pos == std::string::npos)
         {
@@ -81,7 +81,7 @@ public:
             stream_id_ = stream.substr(start, stream_pos - start);
         }
 
-        auto vhost_pos = stream.find_first_of(kVhostParam, stream_pos);
+        auto vhost_pos = stream.find(kVhostParam, stream_pos);
         if (vhost_pos == std::string::npos)
         {
             return;
@@ -89,7 +89,7 @@ public:
 
         vhost_pos += sizeof(kVhostParam) - 1;
 
-        auto amper_pos = stream.find_first_of('&', vhost_pos);
+        auto amper_pos = stream.find('&', vhost_pos);
         if (amper_pos == std::string::npos)
         {
             vhost_ = stream.substr(vhost_pos);
@@ -99,7 +99,7 @@ public:
             vhost_ = stream.substr(vhost_pos, amper_pos - vhost_pos);
         }
 
-        auto token_pos = stream.find_first_of(kTokenParam, amper_pos);
+        auto token_pos = stream.find(kTokenParam, amper_pos);
         if (token_pos == std::string::npos)
         {
             return;

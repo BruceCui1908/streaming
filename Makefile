@@ -21,13 +21,14 @@ INC_DIRS := $(shell find $(HEADER_DIRS) -type d)
 # Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-STD_FLAG := -std=c++17
 W_FLAGS := -Wall -Wextra -Wconversion -Wsign-conversion -Wshadow -Wpedantic
 LDFLAGS := -L/usr/lib -lstdc++ -lm -lpthread -lspdlog
 
 # The -MMD and -MP flags together generate Makefiles for us!
 # These files will have .d instead of .o as the output.
-CPPFLAGS := $(INC_FLAGS) $(STD_FLAG) -MMD -MP -g -DDEBUG
+COMMON_FLAGS := $(INC_FLAGS) -MMD -MP -g -DDEBUG
+CPPFLAGS := $(COMMON_FLAGS) -std=c++17
+CFLAGS := $(COMMON_FLAGS) -std=c17
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
@@ -36,7 +37,7 @@ $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Build step for C++ source
 $(BUILD_DIR)/%.cpp.o: %.cpp

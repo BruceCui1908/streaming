@@ -26,7 +26,9 @@ int main()
 
     auto &thread_pool = util::bs_thread_pool::instance();
     auto cpus = thread_pool.get_thread_count();
-
+#ifdef DEBUG
+    cpus = 1;
+#endif
     for (auto i = 0; i < cpus; ++i)
     {
         thread_pool.detach_task([&]() {

@@ -17,6 +17,11 @@ http_session::http_session(SESSION_CONSTRUCTOR_PARAMS)
     : session(std::move(sock), session_prefix, manager)
 {}
 
+void http_session::send(const char *data, size_t size, bool is_async, bool is_close)
+{
+    network::session::do_write(data, size, is_async, is_close);
+}
+
 void http_session::on_recv(network::flat_buffer &buf)
 {
     ticker_.reset_time();
