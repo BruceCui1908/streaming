@@ -45,7 +45,7 @@ void http_protocol::on_search_http_handler(const char *data, size_t size)
         throw std::runtime_error("http parser received invalid packet");
     }
 
-    header_ = http_header::build(data, size);
+    header_ = http_flv_header::build(data, size);
 
     using http_handler = void (http_protocol::*)();
     static std::unordered_map<Method, http_handler> handler_map = {{Method::GET, &http_protocol::on_http_get}};

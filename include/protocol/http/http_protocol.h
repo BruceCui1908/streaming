@@ -3,7 +3,7 @@
 #include "network/flat_buffer.h"
 #include "network/buffer.h"
 #include "util/resource_pool.h"
-#include "http_header.h"
+#include "http_flv_header.h"
 
 namespace http {
 
@@ -35,7 +35,7 @@ private:
     void send_response(code, bool is_close);
 
 private:
-    http_header::ptr header_;
+    http_flv_header::ptr header_;
     // for sending rtmp packet
     util::resource_pool<network::buffer_raw>::ptr pool_;
 };

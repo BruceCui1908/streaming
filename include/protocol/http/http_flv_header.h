@@ -1,19 +1,20 @@
 #pragma once
 
+#include "meta.h"
+
 #include <memory>
 #include <string>
 
-#include "meta.h"
-
 namespace http {
 
-class http_header
+class http_flv_header
 {
 public:
-    using ptr = std::shared_ptr<http_header>;
+    using ptr = std::shared_ptr<http_flv_header>;
 
     static constexpr char kGET_Method[] = "GET";
     static constexpr char kFlv[] = ".flv";
+    static constexpr char kStart_Pts[] = "startpts=";
 
     static ptr build(const char *, size_t);
 
@@ -42,8 +43,13 @@ public:
         return token_;
     }
 
+    bool is_flv() const
+    {
+        return is_flv_;
+    }
+
 private:
-    http_header(const char *, size_t);
+    http_flv_header(const char *, size_t);
 
     void parse(const char *, size_t);
 
@@ -55,5 +61,7 @@ private:
     std::string stream_;
     std::string vhost_;
     std::string token_;
+    bool is_flv_{false};
+    uint64_t start_pts_{0};
 };
 } // namespace http
