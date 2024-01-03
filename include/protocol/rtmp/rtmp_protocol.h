@@ -4,6 +4,7 @@
 #include "media/media_info.h"
 #include "network/buffer.h"
 #include "network/flat_buffer.h"
+#include "network/socket_sender.h"
 #include "rtmp_media_source.h"
 #include "rtmp_packet.h"
 #include "util/resource_pool.h"
@@ -13,7 +14,8 @@
 #include <utility>
 
 namespace rtmp {
-class rtmp_protocol
+
+class rtmp_protocol : public network::socket_sender
 {
 public:
     virtual ~rtmp_protocol() = default;
@@ -22,8 +24,6 @@ protected:
     rtmp_protocol();
 
     void on_parse_rtmp(network::flat_buffer &);
-
-    virtual void send(const char *, size_t, bool is_async = false, bool is_close = false) = 0;
 
 private:
     const char *handle_C0C1(const char *, size_t);

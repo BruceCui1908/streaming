@@ -1,6 +1,7 @@
 #include "rtmp_protocol.h"
 
 #include "media/media_source.h"
+#include "flv/flv_muxer.h"
 #include "util/util.h"
 #include <algorithm>
 
@@ -389,7 +390,7 @@ void rtmp_protocol::on_amf_connect(AMFDecoder &dec)
     //   spdlog::debug("key = {}, value = {}", it.first, it.second.as_string());
     // }
 
-    media_info_ = media::media_info::create("RTMP");
+    media_info_ = media::media_info::create(media::kRTMP_SCHEMA);
     media_info_->set_app(params["app"].as_string());
     media_info_->set_tc_url(params["tcUrl"].as_string());
 

@@ -11,6 +11,8 @@
 
 namespace media {
 
+static constexpr char kRTMP_SCHEMA[] = "RTMP";
+
 class media_info : public std::enable_shared_from_this<media_info>
 {
 public:
@@ -24,7 +26,7 @@ public:
         return std::shared_ptr<media_info>(new media_info(std::move(schmea)));
     }
 
-    void set_schema(const std::string &schema = "RTMP")
+    void set_schema(const std::string &schema)
     {
         if (schema.empty())
         {

@@ -43,6 +43,11 @@ public:
         return token_;
     }
 
+    uint32_t start_pts() const
+    {
+        return start_pts_;
+    }
+
     bool is_flv() const
     {
         return is_flv_;
@@ -62,6 +67,6 @@ private:
     std::string vhost_;
     std::string token_;
     bool is_flv_{false};
-    uint64_t start_pts_{0};
+    uint32_t start_pts_{0};
 };
 } // namespace http
