@@ -7,8 +7,15 @@
 namespace rtmp {
 
 /// init video/audio tracks based on the metadata passed by the client, eg obs
-void rtmp_demuxer::init_tracks_with_metadata(std::unordered_map<std::string, std::any> &metadata)
+void rtmp_demuxer::init_tracks_with_metadata(std::unordered_map<std::string, std::any> *metainfo)
 {
+    if (!metainfo)
+    {
+        throw std::runtime_error("rtmp demuxer cannot initialize tracks with empty metadata");
+    }
+
+    auto &metadata = *metainfo;
+
     if (metadata.empty())
     {
         throw std::runtime_error("Cannot initialize tracks with empty metadata");

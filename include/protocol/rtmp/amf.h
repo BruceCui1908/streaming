@@ -6,6 +6,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <any>
 
 namespace rtmp {
 
@@ -108,8 +109,12 @@ public:
     AMFEncoder &operator<<(const bool);
     // only for object
     AMFEncoder &operator<<(const AMFValue &);
+    // for metadata
+    AMFEncoder &operator<<(const std::unordered_map<std::string, std::any> &);
 
     const std::string &data() const;
+    const char *c_str() const;
+    size_t size() const;
     void clear();
 
 private:

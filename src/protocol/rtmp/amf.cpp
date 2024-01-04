@@ -321,9 +321,42 @@ AMFEncoder &AMFEncoder::operator<<(const AMFValue &obj)
     return *this;
 }
 
+AMFEncoder &AMFEncoder::operator<<(const std::unordered_map<std::string, std::any> &metadata)
+{
+    buf += char(AMF0Type::AMF_OBJECT);
+
+    for (auto &pr : metadata)
+    {
+        write_key(pr.first);
+        // if any is double
+        auto type_name = pr.second.type().name();
+        if (type_name == "double")
+        {
+            *this << std::any_cast<double>(pr.second);
+        }
+        else if (type_name == "bool")
+        {
+            *this << std::any_cast<bool>(pr.second);
+        }
+    }
+    write_key("");
+    buf += char(AMF0Type::AMF_OBJECT_END);
+    return *this;
+}
+
 const std::string &AMFEncoder::data() const
 {
     return buf;
+}
+
+const char *AMFEncoder::c_str() const
+{
+    return data().c_str();
+}
+
+size_t AMFEncoder::size() const
+{
+    return buf.size();
 }
 
 void AMFEncoder::clear()

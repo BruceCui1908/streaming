@@ -681,7 +681,7 @@ void rtmp_protocol::on_process_metadata(AMFDecoder &dec)
     }
 
     // load tracks
-    rtmp_source_->init_tracks(meta_data_);
+    rtmp_source_->init_tracks(&meta_data_);
 }
 
 } // namespace rtmp

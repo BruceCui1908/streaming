@@ -18,9 +18,19 @@ rtmp_media_source::rtmp_media_source(const media::media_info::ptr &info)
     demuxer_->set_muxer(media::muxer::create());
 }
 
-void rtmp_media_source::init_tracks(std::unordered_map<std::string, std::any> &meta_data)
+void rtmp_media_source::init_tracks(std::unordered_map<std::string, std::any> *meta_data)
 {
     demuxer_->init_tracks_with_metadata(meta_data);
+    meta_data_ = meta_data;
+}
+
+rtmp_media_source::Meta_Data *rtmp_media_source::get_meta_data_or_fail()
+{
+    if (!meta_data_)
+    {
+        throw std::runtime_error("meta data is empty");
+    }
+    return meta_data_;
 }
 
 // process rtmp audio/video packet

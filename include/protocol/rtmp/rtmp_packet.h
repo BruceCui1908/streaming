@@ -183,6 +183,10 @@ public:
 
     const network::flat_buffer::ptr &buf();
 
+    bool is_video_pkt() const;
+
+    bool is_audio_pkt() const;
+
 private:
     rtmp_packet();
 

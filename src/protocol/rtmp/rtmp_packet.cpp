@@ -157,4 +157,14 @@ size_t rtmp_packet::size()
     return pkt_header_length_ += buf_->unread_length();
 }
 
+bool rtmp_packet::is_video_pkt() const
+{
+    return msg_type_id == MSG_VIDEO;
+}
+
+bool rtmp_packet::is_audio_pkt() const
+{
+    return msg_type_id == MSG_AUDIO;
+}
+
 } // namespace rtmp
