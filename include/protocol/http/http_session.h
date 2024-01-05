@@ -19,6 +19,8 @@ public:
 
     void send(const char *, size_t, bool is_async = false, bool is_close = false) override;
 
+    network::session::ptr get_session() override;
+
 private:
     http_session(SESSION_CONSTRUCTOR_PARAMS);
 

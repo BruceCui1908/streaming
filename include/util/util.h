@@ -2,6 +2,8 @@
 
 #include <chrono>
 #include <string>
+#include <type_traits>
+#include <memory>
 
 namespace util {
 // get current timestamp in microsecond
@@ -21,4 +23,15 @@ void set_be32(void *, uint32_t);
 void set_le32(void *, uint32_t);
 
 std::string http_date();
+
+template<typename T>
+class is_shared_ptr : public std::false_type
+{};
+
+template<typename T>
+class is_shared_ptr<std::shared_ptr<T>> : public std::true_type
+{};
+
+template<typename T>
+inline constexpr bool is_shared_ptr_v = is_shared_ptr<T>::value;
 } // namespace util

@@ -3,6 +3,7 @@
 #include "network/flat_buffer.h"
 #include "network/buffer.h"
 #include "network/socket_sender.h"
+#include "network/session_receiver.h"
 #include "util/resource_pool.h"
 #include "http_flv_header.h"
 #include "flv/flv_muxer.h"
@@ -11,7 +12,7 @@
 
 namespace http {
 
-class http_protocol : public network::socket_sender
+class http_protocol : public network::socket_sender, public network::session_receiver
 {
 public:
     static constexpr char kHttpLineBreak[] = "\r\n";
@@ -38,7 +39,7 @@ private:
         const std::multimap<std::string, std::string> &headers = {});
 
 private:
-    void start_flv_pulling();
+    void start_flv_muxing(network::session::ptr);
 
 private:
     http_flv_header::ptr header_{nullptr};

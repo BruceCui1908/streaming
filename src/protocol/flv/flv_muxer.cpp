@@ -17,9 +17,18 @@ flv_muxer::ptr flv_muxer::create()
     return std::shared_ptr<flv_muxer>(new flv_muxer);
 }
 
-void flv_muxer::start_muxing(network::socket_sender *sender, rtmp::rtmp_media_source::ptr &rtmp_src_ptr, uint32_t start_pts)
+flv_muxer::~flv_muxer()
 {
-    if (!sender || !rtmp_src_ptr)
+    if (client_reader_ptr_)
+    {
+        client_reader_ptr_->leave();
+    }
+}
+
+void flv_muxer::start_muxing(network::socket_sender *sender, network::session::ptr session_ptr, rtmp::rtmp_media_source::ptr &rtmp_src_ptr,
+    const http::http_flv_header::ptr &flv_header_ptr, uint32_t start_pts)
+{
+    if (!sender || !session_ptr || !rtmp_src_ptr || !flv_header_ptr)
     {
         throw std::runtime_error("flv cannot mux with invalid sources");
     }
@@ -29,7 +38,7 @@ void flv_muxer::start_muxing(network::socket_sender *sender, rtmp::rtmp_media_so
     sender->send(header_ptr->data(), header_ptr->size(), true);
 
     // 2. send metadata
-    auto &metadata = *rtmp_src_ptr->get_meta_data_or_fail();
+    auto &metadata = *rtmp_src_ptr->get_metadata();
     rtmp::AMFEncoder encoder;
     encoder << "onMetaData" << metadata;
     write_flv(sender, Script_Data, encoder.c_str(), encoder.size());
@@ -42,6 +51,22 @@ void flv_muxer::start_muxing(network::socket_sender *sender, rtmp::rtmp_media_so
         }
 
         write_flv(sender, ptr->is_audio_pkt() ? Audio_Data : Video_data, ptr->buf()->data(), ptr->buf()->unread_length(), ptr->time_stamp);
+    });
+
+    auto pkt_dispatcher = rtmp_src_ptr->get_dispatcher();
+
+    // 4. create client_reader
+    client_reader_ptr_ = media::client_reader<rtmp::rtmp_packet::ptr>::create(session_ptr, pkt_dispatcher, flv_header_ptr->token());
+
+    // 5. set read_cb
+    client_reader_ptr_->set_read_cb([sender](const rtmp::rtmp_packet::ptr &pkt) {
+        spdlog::info("client reader received pkt");
+        // TODO
+    });
+
+    client_reader_ptr_->set_detach([](bool is_normal) {
+        // TODO
+        spdlog::info("client reader detached pkt");
     });
 
     // TODO

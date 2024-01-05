@@ -22,9 +22,11 @@ void rtmp_media_source::init_tracks(std::unordered_map<std::string, std::any> *m
 {
     demuxer_->init_tracks_with_metadata(meta_data);
     meta_data_ = meta_data;
+    // init dispatcher after tracks have been initialized
+    dispatcher_ = rtmp_dispatcher::create();
 }
 
-rtmp_media_source::Meta_Data *rtmp_media_source::get_meta_data_or_fail()
+rtmp_media_source::metadata_map *rtmp_media_source::get_metadata()
 {
     if (!meta_data_)
     {
@@ -33,12 +35,27 @@ rtmp_media_source::Meta_Data *rtmp_media_source::get_meta_data_or_fail()
     return meta_data_;
 }
 
+rtmp_media_source::rtmp_dispatcher::ptr rtmp_media_source::get_dispatcher()
+{
+    if (!dispatcher_)
+    {
+        throw std::runtime_error("rtmp dispatcher is empty");
+    }
+
+    return dispatcher_;
+}
+
 // process rtmp audio/video packet
 void rtmp_media_source::process_av_packet(rtmp_packet::ptr pkt)
 {
     if (!pkt || (pkt->msg_type_id != MSG_AUDIO && pkt->msg_type_id != MSG_VIDEO))
     {
         throw std::runtime_error("rtmp packet must be either video or audio");
+    }
+
+    if (!dispatcher_)
+    {
+        throw std::runtime_error("Must initialize tracks with metadata before processing packets.");
     }
 
     // parsed by demuxer

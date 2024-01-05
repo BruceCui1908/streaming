@@ -48,6 +48,7 @@ public:
         }
         app_ = app;
     }
+
     const std::string &app() const
     {
         return app_;

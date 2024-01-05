@@ -84,14 +84,14 @@ void http_protocol::on_http_get()
 
     if (header_->is_flv())
     {
-        start_flv_pulling();
+        start_flv_muxing(get_session());
         return;
     }
 
     send_response(Unsupported_Media_Type, true);
 }
 
-void http_protocol::start_flv_pulling()
+void http_protocol::start_flv_muxing(network::session::ptr session_ptr)
 {
     auto [media_src_ptr, is_found] = media::media_source::find(media::kRTMP_SCHEMA, header_->vhost(), header_->app(), header_->stream());
 
@@ -108,7 +108,7 @@ void http_protocol::start_flv_pulling()
     // lazy initialization
     flv_muxer_ = flv::flv_muxer::create();
     auto rtmp_src_ptr = std::dynamic_pointer_cast<rtmp::rtmp_media_source>(media_src_ptr);
-    flv_muxer_->start_muxing(this, rtmp_src_ptr, header_->start_pts());
+    flv_muxer_->start_muxing(this, std::move(session_ptr), rtmp_src_ptr, header_, header_->start_pts());
 }
 
 void http_protocol::send_response(code status, bool is_close, const char *http_body, size_t body_size, const char *content_type,
@@ -122,7 +122,7 @@ void http_protocol::send_response(code status, bool is_close, const char *http_b
 
     if (!is_close)
     {
-        response.emplace("Keep-Alive", "timeout=10, max=100");
+        response.emplace("Keep-Alive", "timeout=20, max=100");
     }
 
     // default allow cross domain
@@ -161,7 +161,7 @@ void http_protocol::send_response(code status, bool is_close, const char *http_b
     res += kHttpLineBreak;
 
     // if no http body, just close
-    send(res.c_str(), res.size(), true, !has_response_body);
+    send(res.c_str(), res.size(), true, is_close);
 
     if (has_response_body)
     {

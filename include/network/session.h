@@ -1,8 +1,8 @@
 #pragma once
 
-#include "flat_buffer.h"
-
 #include <boost/asio.hpp>
+
+#include "flat_buffer.h"
 
 #include <functional>
 #include <mutex>

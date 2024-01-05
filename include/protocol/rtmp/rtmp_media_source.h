@@ -2,8 +2,8 @@
 
 #include "media/media_source.h"
 #include "rtmp_demuxer.h"
+#include "media/packet_dispatcher.h"
 
-#include <mutex>
 #include <unordered_map>
 
 namespace rtmp {
@@ -13,20 +13,22 @@ class rtmp_media_source : public media::media_source
 public:
     using ptr = std::shared_ptr<rtmp_media_source>;
 
-    using Meta_Data = std::unordered_map<std::string, std::any>;
-
-    using Config_Frame = std::unordered_map<int, rtmp_packet::ptr>;
+    using metadata_map = std::unordered_map<std::string, std::any>;
+    using config_frame_map = std::unordered_map<int, rtmp_packet::ptr>;
+    using rtmp_dispatcher = media::packet_dispatcher<rtmp_packet::ptr>;
 
     static ptr create(const media::media_info::ptr &);
 
     ~rtmp_media_source() = default;
 
-    /// not responsible for releasing the Meta_Data *
-    void init_tracks(Meta_Data *);
+    /// not responsible for releasing the metadata_map *
+    void init_tracks(metadata_map *);
 
     void process_av_packet(rtmp_packet::ptr);
 
-    Meta_Data *get_meta_data_or_fail();
+    metadata_map *get_metadata();
+
+    rtmp_dispatcher::ptr get_dispatcher();
 
     template<typename FUNC>
     void loop_config_frame(const FUNC &func)
@@ -46,10 +48,13 @@ private:
     rtmp_demuxer::ptr demuxer_;
 
     // meta data
-    Meta_Data *meta_data_;
+    metadata_map *meta_data_;
 
     mutable std::recursive_mutex config_mtx_;
-    Config_Frame config_frame_map_{};
+    config_frame_map config_frame_map_{};
+
+    // packet dispatcher
+    rtmp_dispatcher::ptr dispatcher_;
 };
 
 } // namespace rtmp

@@ -103,7 +103,6 @@ void session::do_write(const char *data, size_t size, bool is_async, bool is_clo
                 }
                 else
                 {
-                    spdlog::debug("successfully async sent {} bytes", bytes_sent);
                     if (is_close)
                     {
                         session_manager_->stop(shared_from_this());
@@ -172,7 +171,7 @@ session_manager::session_manager(std::string session_prefix)
 std::string session_manager::generate_prefix()
 {
     static std::atomic_int64_t session_index{0};
-    return fmt::format("{}-session({})", session_prefix_, ++session_index);
+    return fmt::format("{}-session_count({})", session_prefix_, ++session_index);
 }
 
 void session_manager::add(const session::ptr &session_ptr)
