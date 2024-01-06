@@ -3,11 +3,9 @@
 #include "network/session.h"
 #include "util/util.h"
 
-#include <memory>
 #include <list>
 #include <unordered_map>
 #include <set>
-#include <mutex>
 #include <algorithm>
 
 namespace media {

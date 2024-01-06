@@ -2,9 +2,6 @@
 #include "rtmp/amf.h"
 #include "util/util.h"
 
-#include <arpa/inet.h>
-#include <cstring>
-
 namespace flv {
 
 flv_muxer::flv_muxer()
@@ -36,6 +33,8 @@ void flv_muxer::start_muxing(network::socket_sender *sender, std::weak_ptr<netwo
     // 1. send flv header
     auto header_ptr = prepare_flv_header();
     sender->send(header_ptr->data(), header_ptr->size(), true);
+    char first_tag_size[4] = {0};
+    sender->send(first_tag_size, sizeof(first_tag_size), true);
 
     // 2. send metadata
     auto &metadata = *rtmp_src_ptr->get_metadata();
@@ -106,7 +105,7 @@ network::buffer_raw::ptr flv_muxer::prepare_flv_header()
     header->flv[1] = 'L';
     header->flv[2] = 'V';
     header->version = flv_header::kFlvVersion;
-    header->length = flv_header::kFlvHeaderLength;
+    header->length = htonl(flv_header::kFlvHeaderLength);
     header->have_audio = true;
     header->have_video = true;
 
@@ -144,8 +143,9 @@ void flv_muxer::write_flv(network::socket_sender *sender, tag_type t, const char
     sender->send(data, size, true);
     // send tag
     uint32_t total_size = htonl(static_cast<uint32_t>(tag_header_ptr->size() + size));
-    auto previous_tag = std::to_string(total_size);
-    sender->send(previous_tag.c_str(), previous_tag.size(), true);
+    char size_arr[4];
+    std::memcpy(size_arr, &total_size, sizeof(total_size));
+    sender->send(size_arr, sizeof(size_arr), true);
 }
 
 } // namespace flv

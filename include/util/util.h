@@ -6,6 +6,7 @@
 #include <memory>
 
 namespace util {
+
 // get current timestamp in microsecond
 uint64_t current_micros();
 // get current timestamp in millisecond
@@ -34,4 +35,5 @@ class is_shared_ptr<std::shared_ptr<T>> : public std::true_type
 
 template<typename T>
 inline constexpr bool is_shared_ptr_v = is_shared_ptr<T>::value;
+
 } // namespace util

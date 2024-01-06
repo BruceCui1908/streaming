@@ -78,8 +78,18 @@ void rtmp_media_source::process_av_packet(rtmp_packet::ptr pkt)
         }
         if (!is_registered())
         {
-            regist();
+            return;
         }
+    }
+
+    /*
+    Register the media source right after the first audio/video packet following the config frame.
+    This way, when the client starts pulling the stream, it will receive config frames from config_frame_map_, followed by AV packets from
+    the cache.
+    */
+    if (!is_registered())
+    {
+        regist();
     }
 
     dispatcher_->distribute(pkt);

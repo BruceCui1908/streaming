@@ -339,6 +339,7 @@ AMFEncoder &AMFEncoder::operator<<(const std::unordered_map<std::string, std::an
             *this << std::any_cast<bool>(pr.second);
         }
     }
+
     write_key("");
     buf += char(AMF0Type::AMF_OBJECT_END);
     return *this;

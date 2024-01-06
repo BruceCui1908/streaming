@@ -2,6 +2,8 @@
 
 #include <arpa/inet.h>
 
+#include <spdlog/spdlog.h>
+
 #include <bitset>
 #include <cassert>
 #include <cstdlib>
@@ -10,8 +12,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <utility>
-
-#include <spdlog/spdlog.h>
 
 namespace network {
 

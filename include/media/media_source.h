@@ -49,6 +49,6 @@ protected:
 
 private:
     std::atomic_flag owned_{false};
-    bool is_registered_{false};
+    std::atomic_bool is_registered_{false};
 };
 } // namespace media

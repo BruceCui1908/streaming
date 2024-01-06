@@ -75,7 +75,6 @@ const char *rtmp_protocol::handle_C2(const char *data, size_t size)
 
     next_step_func_ = [this](const char *data, size_t size) { return split_rtmp(data, size); };
 
-    spdlog::debug("rtmp hand shake succeed!");
     // send cmd
     set_chunk_size(4 * 1024);
     send_acknowledgement(100 * 1024);
