@@ -26,7 +26,7 @@ void h264_track::extract_bitstream_sps()
     h264GetWidthHeight(&tH264SpsInfo, &width_, &height_);
     h264GeFramerate(&tH264SpsInfo, &fps_);
 
-    spdlog::debug("successfully parsed sps, video width = {}, height = {}, fps = {}", width_, height_, fps_);
+    spdlog::debug("successfully parsed h264 sps, video width = {}, height = {}, fps = {}", width_, height_, fps_);
 }
 
 // https://www.jianshu.com/p/4f95617f30d0

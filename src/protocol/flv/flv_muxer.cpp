@@ -19,16 +19,16 @@ flv_muxer::ptr flv_muxer::create()
 
 flv_muxer::~flv_muxer()
 {
-    if (client_reader_ptr_)
+    if (auto strong_client_reader = weak_client_reader_.lock())
     {
-        client_reader_ptr_->leave();
+        strong_client_reader->leave();
     }
 }
 
-void flv_muxer::start_muxing(network::socket_sender *sender, network::session::ptr session_ptr, rtmp::rtmp_media_source::ptr &rtmp_src_ptr,
-    const http::http_flv_header::ptr &flv_header_ptr, uint32_t start_pts)
+void flv_muxer::start_muxing(network::socket_sender *sender, std::weak_ptr<network::session> weak_session,
+    rtmp::rtmp_media_source::ptr &rtmp_src_ptr, const http::http_flv_header::ptr &flv_header_ptr, uint32_t start_pts)
 {
-    if (!sender || !session_ptr || !rtmp_src_ptr || !flv_header_ptr)
+    if (!sender || !rtmp_src_ptr || !flv_header_ptr)
     {
         throw std::runtime_error("flv cannot mux with invalid sources");
     }
@@ -56,20 +56,41 @@ void flv_muxer::start_muxing(network::socket_sender *sender, network::session::p
     auto pkt_dispatcher = rtmp_src_ptr->get_dispatcher();
 
     // 4. create client_reader
-    client_reader_ptr_ = media::client_reader<rtmp::rtmp_packet::ptr>::create(session_ptr, pkt_dispatcher, flv_header_ptr->token());
+    auto client_reader_ptr = media::client_reader<rtmp::rtmp_packet::ptr>::create(weak_session, pkt_dispatcher, flv_header_ptr->token());
 
     // 5. set read_cb
-    client_reader_ptr_->set_read_cb([sender](const rtmp::rtmp_packet::ptr &pkt) {
-        spdlog::info("client reader received pkt");
-        // TODO
+    bool need_filter_ts = start_pts > 0;
+    std::weak_ptr<flv_muxer> weak_self = shared_from_this();
+
+    client_reader_ptr->set_read_cb([sender, &need_filter_ts, start_pts, weak_self](const rtmp::rtmp_packet::ptr &pkt) {
+        if (need_filter_ts)
+        {
+            if (pkt->time_stamp < start_pts)
+            {
+                return;
+            }
+            need_filter_ts = false;
+        }
+
+        auto strong_self = weak_self.lock();
+        if (!strong_self)
+        {
+            return;
+        }
+
+        strong_self->write_flv(sender, tag_type(pkt->msg_type_id), pkt->buf()->data(), pkt->buf()->unread_length(), pkt->time_stamp);
     });
 
-    client_reader_ptr_->set_detach([](bool is_normal) {
-        // TODO
-        spdlog::info("client reader detached pkt");
+    client_reader_ptr->set_detach([weak_session](bool is_normal) {
+        if (auto strong_session = weak_session.lock())
+        {
+            strong_session->shutdown();
+        }
     });
 
-    // TODO
+    pkt_dispatcher->regist_reader(client_reader_ptr);
+
+    weak_client_reader_ = client_reader_ptr;
 }
 
 network::buffer_raw::ptr flv_muxer::prepare_flv_header()

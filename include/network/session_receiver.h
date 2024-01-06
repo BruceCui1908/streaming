@@ -10,7 +10,7 @@ public:
     session_receiver() = default;
     virtual ~session_receiver() = default;
 
-    virtual session::ptr get_session() = 0;
+    virtual std::weak_ptr<session> get_session() = 0;
 };
 
 } // namespace network

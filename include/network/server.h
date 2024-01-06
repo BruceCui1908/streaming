@@ -1,22 +1,20 @@
 #pragma once
 
-#include <spdlog/spdlog.h>
-
 #include <memory>
-#include <string>
 
 namespace network {
-typedef enum
+
+enum class Sock_Type
 {
     tcp = 0,
     udp = 1,
-} sock_type;
+};
 
-typedef enum
+enum class Ip_Type
 {
     ipv4 = 0,
     ipv6 = 1,
-} ip_type;
+};
 
 class server : public std::enable_shared_from_this<server>
 {
@@ -31,12 +29,16 @@ public:
     virtual void restart() = 0;
 
 protected:
-    server(uint16_t, sock_type, ip_type);
+    server(uint16_t port, Sock_Type sock_type, Ip_Type ip_type)
+        : port_{port}
+        , sock_type_{sock_type}
+        , ip_type_{ip_type}
+    {}
 
 protected:
     uint16_t port_;
-    sock_type sock_type_;
-    ip_type ip_type_;
+    Sock_Type sock_type_;
+    Ip_Type ip_type_;
 };
 
 } // namespace network

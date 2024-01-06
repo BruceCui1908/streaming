@@ -8,20 +8,18 @@ session::session(SESSION_CONSTRUCTOR_PARAMS)
     , session_prefix_{session_prefix}
     , raw_fd_{socket_.native_handle()}
     , session_manager_{manager}
-{}
+{
+    id_ = fmt::format("{}-client_socket({})", session_prefix_, raw_fd_);
+}
 
 const std::string &session::id()
 {
-    if (id_.empty())
-    {
-        id_ = fmt::format("{}-client_socket({})", session_prefix_, raw_fd_);
-    }
     return id_;
 }
 
 session::~session()
 {
-    spdlog::debug("{} destroyed!", id());
+    shutdown();
 }
 
 void session::do_read()
@@ -43,27 +41,11 @@ void session::do_read()
 
             if (ec)
             {
-                if (ec.value() == operation_cancelled)
-                {
-                    spdlog::warn("session has been destroyed, return from "
-                                 "async_read_some(), err = {}, msg = {}",
-                        ec.value(), ec.message());
-                    return;
-                }
-
-                spdlog::error("{} do_read() received error {}, msg = {}", id(), ec.value(), ec.message());
-
-                if (ec != boost::asio::error::operation_aborted)
-                {
-                    session_manager_->stop(strong_self);
-                    return;
-                }
+                session_manager_->stop(strong_self);
+                return;
             }
 
             buffer_.socket_consume(bytes_transferred);
-
-            // spdlog::debug("do_read() reads {} bytes, buffer has unread {} bytes",
-            //               bytes_transferred, buffer_.unread_length());
 
             // if no error, then send to derived session class
             on_recv(buffer_);
@@ -94,19 +76,11 @@ void session::do_write(const char *data, size_t size, bool is_async, bool is_clo
                 if (ec)
                 {
                     spdlog::error("{} do_write() received error {}, msg = {}", id(), ec.value(), ec.message());
-
-                    if (ec != boost::asio::error::operation_aborted)
-                    {
-                        session_manager_->stop(shared_from_this());
-                        return;
-                    }
+                    session_manager_->stop(strong_self);
                 }
-                else
+                else if (is_close)
                 {
-                    if (is_close)
-                    {
-                        session_manager_->stop(shared_from_this());
-                    }
+                    session_manager_->stop(strong_self);
                 }
             });
     }
@@ -141,8 +115,25 @@ void session::do_write(const char *data, size_t size, bool is_async, bool is_clo
     }
 }
 
+// called by other classes
+void session::shutdown()
+{
+    stop();
+
+    if (session_manager_)
+    {
+        session_manager_->erase(id());
+    }
+}
+
+// called by session_manager
 void session::stop()
 {
+    if (is_closed_)
+    {
+        return;
+    }
+
     if (socket_.is_open())
     {
         socket_.close();
@@ -151,24 +142,26 @@ void session::stop()
         // socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both,
         // ignored_ec);
     }
-}
 
-void session::shutdown()
-{
-    session_manager_->stop(shared_from_this());
+    is_closed_ = true;
 }
 
 // session_manager impl
-session_manager::ptr session_manager::create(std::string prefix)
+session_manager::ptr session_manager::create(const std::string &prefix)
 {
-    return std::shared_ptr<session_manager>(new session_manager(std::move(prefix)));
+    return std::shared_ptr<session_manager>(new session_manager(prefix));
 }
 
-session_manager::session_manager(std::string session_prefix)
-    : session_prefix_{std::move(session_prefix)}
+session_manager::session_manager(const std::string &session_prefix)
+    : session_prefix_{session_prefix}
 {}
 
-std::string session_manager::generate_prefix()
+session_manager::~session_manager()
+{
+    stop_all();
+}
+
+std::string session_manager::generate_session_prefix()
 {
     static std::atomic_int64_t session_index{0};
     return fmt::format("{}-session_count({})", session_prefix_, ++session_index);
@@ -176,37 +169,50 @@ std::string session_manager::generate_prefix()
 
 void session_manager::add(const session::ptr &session_ptr)
 {
-    std::lock_guard<std::mutex> lock(mtx_);
+    std::lock_guard<std::recursive_mutex> lock(mtx_);
     session_map_.emplace(session_ptr->id(), session_ptr);
 }
 
 void session_manager::stop(const session::ptr &session_ptr)
 {
-    std::lock_guard<std::mutex> lock(mtx_);
-    if (session_ptr)
-    {
-        session_ptr->stop();
-        session_map_.erase(session_ptr->id());
-    }
-}
-
-void session_manager::stop_all()
-{
-    std::lock_guard<std::mutex> lock(mtx_);
-    if (session_map_.empty())
+    if (!session_ptr)
     {
         return;
     }
 
-    for (auto &it : session_map_)
+    auto it = session_map_.find(session_ptr->id());
+    if (it == session_map_.end())
     {
-        if (it.second)
-        {
-            it.second->stop();
-        }
+        return;
     }
 
-    session_map_.clear();
+    session_ptr->stop();
+    session_map_.erase(it);
+}
+
+void session_manager::erase(const std::string &session_id)
+{
+    if (!session_id.empty())
+    {
+        return;
+    }
+
+    session_map_.erase(session_id);
+}
+
+void session_manager::stop_all()
+{
+    std::lock_guard<std::recursive_mutex> lock(mtx_);
+
+    for (auto it = session_map_.begin(); it != session_map_.end();)
+    {
+        auto &session_ptr = it->second;
+        if (session_ptr)
+        {
+            session_ptr->stop();
+        }
+        it = session_map_.erase(it);
+    }
 }
 
 } // namespace network

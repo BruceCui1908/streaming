@@ -26,7 +26,7 @@ public:
 
     std::shared_ptr<void> get_ownership();
 
-    void regist();
+    bool is_registered();
 
     media_source(const media_source &) = delete;
     media_source &operator=(const media_source &) = delete;
@@ -36,10 +36,11 @@ public:
 protected:
     media_source(const media_info::ptr &);
 
-    int get_bytes_speed(codec::Track_Type);
-
-private:
+    void set_registered(bool);
+    void regist();
     void unregist();
+
+    int get_bytes_speed(codec::Track_Type);
 
 protected:
     media_info::ptr media_info_;
@@ -48,5 +49,6 @@ protected:
 
 private:
     std::atomic_flag owned_{false};
+    bool is_registered_{false};
 };
 } // namespace media

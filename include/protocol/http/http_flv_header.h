@@ -2,6 +2,8 @@
 
 #include "meta.h"
 
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <string>
 
@@ -28,9 +30,9 @@ public:
         return app_;
     }
 
-    const std::string &stream() const
+    const std::string &stream_id() const
     {
-        return stream_;
+        return stream_id_;
     }
 
     const std::string &vhost() const
@@ -53,6 +55,15 @@ public:
         return is_flv_;
     }
 
+    const std::string &info()
+    {
+        if (info_.empty())
+        {
+            info_ = fmt::format("{}|{}|{}", app_, vhost_, stream_id_);
+        }
+        return info_;
+    }
+
 private:
     http_flv_header(const char *, size_t);
 
@@ -63,10 +74,11 @@ private:
 private:
     Method method_{INVALID};
     std::string app_;
-    std::string stream_;
+    std::string stream_id_;
     std::string vhost_;
     std::string token_;
     bool is_flv_{false};
     uint32_t start_pts_{0};
+    std::string info_;
 };
 } // namespace http

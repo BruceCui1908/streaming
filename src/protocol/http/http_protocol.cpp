@@ -11,6 +11,11 @@ http_protocol::http_protocol()
     pool_ = util::resource_pool<network::buffer_raw>::create();
 }
 
+http_protocol::~http_protocol()
+{
+    spdlog::info("Client {} stopped pulling from {}", header_->token(), header_->info());
+}
+
 void http_protocol::on_parse_http(network::flat_buffer &buf)
 {
     const char *dummy = buf.data();
@@ -91,9 +96,11 @@ void http_protocol::on_http_get()
     send_response(Unsupported_Media_Type, true);
 }
 
-void http_protocol::start_flv_muxing(network::session::ptr session_ptr)
+void http_protocol::start_flv_muxing(std::weak_ptr<network::session> session_ptr)
 {
-    auto [media_src_ptr, is_found] = media::media_source::find(media::kRTMP_SCHEMA, header_->vhost(), header_->app(), header_->stream());
+    spdlog::info("Client {} is pulling from {}", header_->token(), header_->info());
+
+    auto [media_src_ptr, is_found] = media::media_source::find(media::kRTMP_SCHEMA, header_->vhost(), header_->app(), header_->stream_id());
 
     if (!is_found)
     {

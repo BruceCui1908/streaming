@@ -34,11 +34,6 @@ public:
         return std::shared_ptr<client_reader>(new client_reader(std::move(weak_session), std::move(weak_dispatcher), token));
     }
 
-    bool is_alive() const
-    {
-        return (bool)weak_session_.lock();
-    }
-
     void set_read_cb(std::function<void(const T &)> cb)
     {
         if (!cb)
@@ -53,7 +48,7 @@ public:
     {
         if (!read_cb_)
         {
-            detach();
+            spdlog::warn("{} has no associated read_cb", id_);
             return;
         }
 
@@ -73,9 +68,6 @@ public:
     // The client actively shuts down the connection
     void leave()
     {
-
-        spdlog::debug("{} is leaving", id_);
-
         if (!is_registered_)
         {
             return;
@@ -122,9 +114,9 @@ private:
     }
 
     /// @brief  called by packet_dispatcher
-    void set_is_registered()
+    void set_registered(bool is_registered)
     {
-        is_registered_ = true;
+        is_registered_ = is_registered;
     }
 
 private:
@@ -133,7 +125,7 @@ private:
     std::function<void(const T &)> read_cb_;
     std::function<void(bool)> detach_cb_;
     std::string id_;
-    bool is_registered_{false};
+    std::atomic_bool is_registered_{false};
 };
 
 /**
@@ -159,7 +151,7 @@ public:
         detach_all_readers();
     }
 
-    void regist_reader(client_reader_ptr client_ptr)
+    void regist_reader(const client_reader_ptr &client_ptr)
     {
         if (!client_ptr)
         {
@@ -169,12 +161,12 @@ public:
         // register in new clients set
         {
             std::scoped_lock lock(client_mtx_);
-            client_ptr->set_is_registered();
-            new_clients_.insert(std::move(client_ptr));
+            client_ptr->set_registered(true);
+            new_clients_.insert(client_ptr);
         }
     }
 
-    void deregist_reader(client_reader_ptr client_ptr)
+    void deregist_reader(const client_reader_ptr &client_ptr)
     {
         if (!client_ptr)
         {
@@ -187,9 +179,64 @@ public:
         }
     }
 
-    void input(T &pkt)
+    void distribute(const T &pkt)
     {
-        // TODO
+        // 1. dispatch this single packet to old clients
+        {
+            std::lock_guard<std::recursive_mutex> lock(client_mtx_);
+            for (auto it = old_clients_.begin(); it != old_clients_.end();)
+            {
+                auto &client_ptr = *it;
+                if (!client_ptr)
+                {
+                    it = old_clients_.erase(it);
+                }
+                else
+                {
+                    client_ptr->on_read(pkt);
+                    ++it;
+                }
+            }
+        }
+
+        // 2. emplace the packet at the back of the packet list
+        {
+            std::lock_guard<std::recursive_mutex> lock(pkt_mtx_);
+            while (packet_list_.size() >= max_size_)
+            {
+                packet_list_.pop_front();
+            }
+            packet_list_.emplace_back(pkt);
+        }
+
+        // 3. distribute the cached packets to new clients and merge two clients
+        {
+            std::scoped_lock lock(pkt_mtx_, client_mtx_);
+            if (new_clients_.empty())
+            {
+                return;
+            }
+
+            for (auto &pkt : packet_list_)
+            {
+                for (auto it = new_clients_.begin(); it != new_clients_.end();)
+                {
+                    auto &client_ptr = *it;
+                    if (!client_ptr)
+                    {
+                        it = new_clients_.erase(it);
+                    }
+                    else
+                    {
+                        client_ptr->on_read(pkt);
+                        ++it;
+                    }
+                }
+            }
+
+            old_clients_.merge(new_clients_);
+            new_clients_.clear();
+        }
     }
 
     void detach_all_readers(bool is_normal = false)
@@ -201,22 +248,24 @@ public:
 
         {
             std::lock_guard<std::recursive_mutex> lock(client_mtx_);
-            for (auto it = new_clients_.begin(); it != new_clients_.end(); ++it)
+            for (auto it = new_clients_.begin(); it != new_clients_.end();)
             {
                 auto &ptr = *it;
                 if (ptr)
                 {
                     ptr->detach();
+                    ptr->set_registered(false);
                 }
                 it = new_clients_.erase(it);
             }
 
-            for (auto it = old_clients_.begin(); it != old_clients_.end(); ++it)
+            for (auto it = old_clients_.begin(); it != old_clients_.end();)
             {
                 auto &ptr = *it;
                 if (ptr)
                 {
                     ptr->detach();
+                    ptr->set_registered(false);
                 }
                 it = old_clients_.erase(it);
             }
@@ -236,7 +285,6 @@ private:
 private:
     // for packet list
     size_t max_size_;
-    size_t packet_list_size_{0};
     std::recursive_mutex pkt_mtx_{};
     std::list<T> packet_list_{};
 

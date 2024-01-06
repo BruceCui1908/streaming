@@ -446,7 +446,7 @@ void rtmp_protocol::on_amf_publish(AMFDecoder &dec)
                 spdlog::warn("{} has been created", media_info_->info());
             }
 
-            // create a new rtmp media source and regist
+            // create a new rtmp media source
             auto rtmp_src_ptr = rtmp_media_source::create(media_info_);
             src_ownership_ = rtmp_src_ptr->get_ownership();
             if (!src_ownership_)
@@ -454,7 +454,6 @@ void rtmp_protocol::on_amf_publish(AMFDecoder &dec)
                 throw std::runtime_error(fmt::format("cannot get ownership of {}", media_info_->info()));
             }
 
-            rtmp_src_ptr->regist();
             rtmp_source_ = std::move(rtmp_src_ptr);
         }
         else
@@ -505,8 +504,6 @@ void rtmp_protocol::on_amf_publish(AMFDecoder &dec)
     AMFEncoder encoder;
     encoder << "onStatus" << transaction_id_ << nullptr << status;
     send_rtmp(MSG_CMD, msg_stream_id_, encoder.data(), 0, CHUNK_CLIENT_REQUEST_BEFORE);
-
-    spdlog::info("{} has been published", media_info_->info());
 }
 
 void rtmp_protocol::send_rtmp(

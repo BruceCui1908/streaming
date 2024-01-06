@@ -100,7 +100,7 @@ size_t http_flv_header::extract_streaming_info(const std::string &temp)
 
     // extract stream
     std::tie(is_found, offset, param) = extract_param(temp, "/", kFlv, offset);
-    stream_ = std::move(param);
+    stream_id_ = std::move(param);
     is_flv_ = true;
 
     // extract vhost

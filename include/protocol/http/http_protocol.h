@@ -21,7 +21,7 @@ public:
 
     static constexpr char kServerName[] = "OBS-Streaming";
 
-    virtual ~http_protocol() = default;
+    virtual ~http_protocol();
 
 protected:
     http_protocol();
@@ -39,7 +39,7 @@ private:
         const std::multimap<std::string, std::string> &headers = {});
 
 private:
-    void start_flv_muxing(network::session::ptr);
+    void start_flv_muxing(std::weak_ptr<network::session>);
 
 private:
     http_flv_header::ptr header_{nullptr};

@@ -9,7 +9,6 @@ http_session::ptr http_session::create(SESSION_CONSTRUCTOR_PARAMS)
 
 void http_session::start()
 {
-    spdlog::debug("http session [{}] started!", id());
     do_read();
 }
 
@@ -17,7 +16,7 @@ http_session::http_session(SESSION_CONSTRUCTOR_PARAMS)
     : session(std::move(sock), session_prefix, manager)
 {}
 
-network::session::ptr http_session::get_session()
+std::weak_ptr<network::session> http_session::get_session()
 {
     return shared_from_this();
 }

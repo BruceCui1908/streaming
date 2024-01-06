@@ -5,12 +5,11 @@
 
 #include <boost/asio.hpp>
 
-#include <functional>
-#include <type_traits>
-
 namespace network {
 
 using boost::asio::ip::tcp;
+
+#define TCP_SERVER_PARAMS boost::asio::io_context &io_context, uint16_t port, Ip_Type ip_type
 
 class tcp_server : public server
 {
@@ -20,7 +19,7 @@ public:
     static constexpr char kDefaultLocalIpv4[] = "0.0.0.0";
     static constexpr char kDefaultLocalIpv6[] = "0::0";
 
-    static ptr create(boost::asio::io_context &, const uint16_t, ip_type ipType = ip_type::ipv4);
+    static ptr create(TCP_SERVER_PARAMS = Ip_Type::ipv4);
 
     ~tcp_server();
 
@@ -37,7 +36,7 @@ public:
                 session_manager_ = session_manager::create(info());
             }
 
-            auto session_ptr = SessionProtocol::create(std::move(sock), session_manager_->generate_prefix(), session_manager_);
+            auto session_ptr = SessionProtocol::create(std::move(sock), session_manager_->generate_session_prefix(), session_manager_);
             session_manager_->add(session_ptr);
             return session_ptr;
         };
@@ -46,7 +45,7 @@ public:
     }
 
 private:
-    tcp_server(boost::asio::io_context &, const uint16_t, ip_type ipType);
+    tcp_server(TCP_SERVER_PARAMS);
 
     // callback after receiving termination signal
     void start_signal_listener();

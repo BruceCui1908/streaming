@@ -9,6 +9,7 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <atomic>
 
 #define SESSION_CONSTRUCTOR_PARAMS                                                                                                         \
     boost::asio::ip::tcp::socket sock, const std::string &session_prefix, const network::session_manager_ptr &manager
@@ -27,7 +28,6 @@ class session : public std::enable_shared_from_this<session>
 {
 public:
     using ptr = std::shared_ptr<session>;
-    using err_cb = std::function<void(const session_manager_ptr &)>;
 
     friend class session_manager;
 
@@ -42,7 +42,7 @@ public:
     session &operator=(session &&) = delete;
 
     const std::string &id();
-    /// destroy session
+
     void shutdown();
     virtual void start() = 0;
 
@@ -65,16 +65,19 @@ protected:
     int raw_fd_{-1};
     std::string id_;
     session_manager_ptr session_manager_;
+    std::atomic_bool is_closed_{false};
 };
 
 class session_manager : public std::enable_shared_from_this<session_manager>
 {
 public:
+    friend class session;
+
     using ptr = std::shared_ptr<session_manager>;
 
-    static ptr create(std::string);
+    static ptr create(const std::string &);
 
-    ~session_manager() = default;
+    ~session_manager();
 
     session_manager(const session_manager &) = delete;
     session_manager &operator=(const session_manager &) = delete;
@@ -85,14 +88,17 @@ public:
     void stop(const session::ptr &);
     void stop_all();
 
-    std::string generate_prefix();
+    std::string generate_session_prefix();
 
 private:
-    session_manager(std::string);
+    session_manager(const std::string &);
+
+    void erase(const std::string &);
 
 private:
     std::string session_prefix_;
-    std::mutex mtx_{};
+    std::recursive_mutex mtx_{};
+    /// @brief except session_manager, no class should store session::ptr
     std::unordered_map<std::string, session::ptr> session_map_{};
 };
 

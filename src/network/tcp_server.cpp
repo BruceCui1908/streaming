@@ -1,17 +1,16 @@
 #include "tcp_server.h"
 
 #include <csignal>
-#include <stdexcept>
 
 namespace network {
 
-tcp_server::ptr tcp_server::create(boost::asio::io_context &io_context, const uint16_t port, ip_type ipType)
+tcp_server::ptr tcp_server::create(TCP_SERVER_PARAMS)
 {
-    return std::shared_ptr<tcp_server>(new tcp_server(io_context, port, ipType));
+    return std::shared_ptr<tcp_server>(new tcp_server(io_context, port, ip_type));
 }
 
-tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port, ip_type ipType)
-    : server(port, sock_type::tcp, ipType)
+tcp_server::tcp_server(TCP_SERVER_PARAMS)
+    : server(port, Sock_Type::tcp, ip_type)
     , io_context_{io_context}
     , signals_{io_context_}
     , acceptor_{io_context_}
@@ -26,7 +25,7 @@ tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port,
     start_signal_listener();
 
     tcp::resolver resolver(io_context_);
-    auto result = resolver.resolve(ipType == ip_type::ipv4 ? kDefaultLocalIpv4 : kDefaultLocalIpv6, std::to_string(port));
+    auto result = resolver.resolve(ip_type_ == network::Ip_Type::ipv4 ? kDefaultLocalIpv4 : kDefaultLocalIpv6, std::to_string(port));
     if (result.empty())
     {
         throw std::invalid_argument("cannot resolve tcp address");
@@ -42,12 +41,12 @@ tcp_server::tcp_server(boost::asio::io_context &io_context, const uint16_t port,
     raw_fd_ = acceptor_.native_handle();
     session_manager_ = session_manager::create(info());
 
-    spdlog::info("{} created", info());
+    spdlog::info("Server {} created", info());
 }
 
 tcp_server::~tcp_server()
 {
-    spdlog::info("{} destroyed", info());
+    spdlog::info("Server {} destroyed", info());
 }
 
 void tcp_server::do_accept()
@@ -89,7 +88,7 @@ const std::string &tcp_server::info()
 {
     if (server_name_.empty())
     {
-        server_name_ = fmt::format("TCP[{}|{}|{}]", port_, ip_type_ == ip_type::ipv4 ? "ipv4" : "ipv6", raw_fd_);
+        server_name_ = fmt::format("TCP[{}|{}|{}]", port_, ip_type_ == Ip_Type::ipv4 ? "ipv4" : "ipv6", raw_fd_);
     }
     return server_name_;
 }
@@ -98,13 +97,12 @@ void tcp_server::start_signal_listener()
 {
     signals_.async_wait([this](boost::system::error_code, int signo) {
         spdlog::info("{} received signal {}", info(), signo);
-        if (io_context_.stopped())
-        {
-            io_context_.stop();
-        }
-
         // close the acceptor
         acceptor_.close();
+
+        // close io_context
+        io_context_.stop();
+
         // close the session map
         session_manager_->stop_all();
     });

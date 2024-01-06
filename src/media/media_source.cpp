@@ -1,9 +1,7 @@
 #include "media_source.h"
 
-#include <spdlog/spdlog.h>
-#include <stdexcept>
-
 namespace media {
+
 // store all the media sources
 static std::recursive_mutex media_sources_mtx_;
 using stream_map = std::unordered_map<std::string /**stream id*/, std::weak_ptr<media_source>>;
@@ -33,6 +31,11 @@ media_source::~media_source()
     unregist();
 }
 
+bool media_source::is_registered()
+{
+    return is_registered_;
+}
+
 void media_source::regist()
 {
     if (!media_info_)
@@ -56,6 +59,9 @@ void media_source::regist()
     }
 
     weak_source = shared_from_this();
+    set_registered(true);
+
+    spdlog::info("Broadcaster {} is streaming on {}", media_info_->token(), media_info_->info());
 }
 
 template<typename MAP, typename First, typename... KeyTypes>
@@ -93,7 +99,14 @@ void media_source::unregist()
     bool ret = false;
     erase_media_source(
         ret, this, media_sources_, media_info_->schema(), media_info_->vhost(), media_info_->app(), media_info_->stream_id());
-    spdlog::debug("unregist {}, result = {}", media_info_->info(), ret);
+    set_registered(false);
+
+    spdlog::info("Broadcaster {} stopped streaming on {}", media_info_->token(), media_info_->info());
+}
+
+void media_source::set_registered(bool is_registered)
+{
+    is_registered_ = is_registered;
 }
 
 std::tuple<media_source::ptr, bool> media_source::find(
@@ -108,28 +121,24 @@ std::tuple<media_source::ptr, bool> media_source::find(
     // check if schema exists in media sources
     if (!media_sources_.count(schema))
     {
-        spdlog::debug("cannot find media source with {}", schema);
         return {nullptr, false};
     }
 
     auto &vhost_sources = media_sources_[schema];
     if (!vhost_sources.count(vhost))
     {
-        spdlog::debug("cannot find media source with {}|{}", schema, vhost);
         return {nullptr, false};
     }
 
     auto &app_sources = vhost_sources[vhost];
     if (!app_sources.count(app))
     {
-        spdlog::debug("cannot find media source with {}|{}", app);
         return {nullptr, false};
     }
 
     auto &stream_sources = app_sources[app];
     if (!stream_sources.count(stream_id))
     {
-        spdlog::debug("media sources do not contain stream id {}", stream_id);
         return {nullptr, false};
     }
 

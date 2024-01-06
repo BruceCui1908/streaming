@@ -22,6 +22,7 @@ void rtmp_media_source::init_tracks(std::unordered_map<std::string, std::any> *m
 {
     demuxer_->init_tracks_with_metadata(meta_data);
     meta_data_ = meta_data;
+
     // init dispatcher after tracks have been initialized
     dispatcher_ = rtmp_dispatcher::create();
 }
@@ -75,9 +76,13 @@ void rtmp_media_source::process_av_packet(rtmp_packet::ptr pkt)
             std::scoped_lock lock(config_mtx_);
             config_frame_map_[pkt->msg_type_id] = pkt;
         }
+        if (!is_registered())
+        {
+            regist();
+        }
     }
 
-    // TODO add packet dispatcher
+    dispatcher_->distribute(pkt);
 }
 
 } // namespace rtmp

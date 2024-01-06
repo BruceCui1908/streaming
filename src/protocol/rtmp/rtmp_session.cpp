@@ -1,4 +1,5 @@
 #include "rtmp_session.h"
+
 namespace rtmp {
 
 rtmp_session::ptr rtmp_session::create(RTMP_CONSTRUCTOR_PARAMS)
@@ -12,7 +13,6 @@ rtmp_session::rtmp_session(RTMP_CONSTRUCTOR_PARAMS)
 
 void rtmp_session::start()
 {
-    spdlog::debug("rtmp session on [{}] started!", id());
     do_read();
 }
 

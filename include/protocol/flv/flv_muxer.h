@@ -15,12 +15,12 @@ class flv_muxer : public std::enable_shared_from_this<flv_muxer>
 {
 public:
     using ptr = std::shared_ptr<flv_muxer>;
-    using client_reader_ptr = media::client_reader<rtmp::rtmp_packet::ptr>::ptr;
+    using client_reader = media::client_reader<rtmp::rtmp_packet::ptr>;
 
     static ptr create();
 
-    void start_muxing(network::socket_sender *, network::session::ptr, rtmp::rtmp_media_source::ptr &, const http::http_flv_header::ptr &,
-        uint32_t start_pts);
+    void start_muxing(network::socket_sender *, std::weak_ptr<network::session>, rtmp::rtmp_media_source::ptr &,
+        const http::http_flv_header::ptr &, uint32_t start_pts);
 
     ~flv_muxer();
 
@@ -35,7 +35,7 @@ private:
 
 private:
     util::resource_pool<network::buffer_raw>::ptr pool_;
-    client_reader_ptr client_reader_ptr_;
+    std::weak_ptr<client_reader> weak_client_reader_;
 };
 
 } // namespace flv
