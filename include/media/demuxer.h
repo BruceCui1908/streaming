@@ -10,16 +10,17 @@ public:
     demuxer() = default;
     virtual ~demuxer() = default;
 
-    void set_muxer(const muxer::ptr &mux)
+    void set_muxer(muxer::ptr mux)
     {
         if (!mux)
         {
             throw std::runtime_error("Unable to assign an empty muxer to the demuxer.");
         }
-        muxer_ = mux;
+
+        muxer_ = std::move(mux);
     }
 
-    const muxer::ptr &get_muxer()
+    const muxer::ptr get_muxer()
     {
         if (!muxer_)
         {

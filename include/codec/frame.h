@@ -46,20 +46,23 @@ public:
         return prefix_size_;
     }
 
-    void set_data(const network::flat_buffer::ptr &ptr)
+    void set_data(network::flat_buffer::ptr ptr)
     {
         if (!ptr)
         {
             throw std::runtime_error("Unable to assign an empty buffer to the frame.");
         }
-        buf_ = ptr;
+
+        buf_ = std::move(ptr);
     }
-    const network::flat_buffer::ptr &data() const
+
+    const network::flat_buffer::ptr data() const
     {
         if (!buf_)
         {
             throw std::runtime_error("The buffer within the frame has been lost");
         }
+
         return buf_;
     }
 

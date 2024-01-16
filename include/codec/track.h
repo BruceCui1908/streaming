@@ -18,6 +18,7 @@ public:
     {
         bit_rate_ = bit_rate;
     }
+
     uint32_t bit_rate() const
     {
         return bit_rate_;
@@ -39,9 +40,14 @@ public:
         ft_->translate_frame(fr);
     }
 
-    void set_frame_translator(const frame_translator::ptr &ft)
+    void set_frame_translator(frame_translator::ptr ft)
     {
-        ft_ = ft;
+        if (!ft)
+        {
+            throw std::runtime_error("cannot set empty frame translator");
+        }
+
+        ft_ = std::move(ft);
     }
 
 private:

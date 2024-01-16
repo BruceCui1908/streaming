@@ -22,7 +22,7 @@ public:
     void init_video_track(rtmp_flv_codec_id codec_id, int bit_rate);
     void init_audio_track(rtmp_flv_codec_id codec_id, int bit_rate);
 
-    void input_rtmp(rtmp_packet::ptr &);
+    void input_rtmp(rtmp_packet::ptr);
 
 private:
     double duration_{0.0};

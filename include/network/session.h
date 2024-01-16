@@ -84,7 +84,7 @@ public:
     session_manager(session_manager &&) = delete;
     session_manager &operator=(session_manager &&) = delete;
 
-    void add(const session::ptr &);
+    void add(session::ptr);
     void stop(const session::ptr &);
     void stop_all();
 

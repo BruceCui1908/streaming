@@ -23,7 +23,7 @@ flv_muxer::~flv_muxer()
 }
 
 void flv_muxer::start_muxing(network::socket_sender *sender, std::weak_ptr<network::session> weak_session,
-    rtmp::rtmp_media_source::ptr &rtmp_src_ptr, const http::http_flv_header::ptr &flv_header_ptr, uint32_t start_pts)
+    rtmp::rtmp_media_source::ptr rtmp_src_ptr, http::http_flv_header::ptr flv_header_ptr, uint32_t start_pts)
 {
     if (!sender || !rtmp_src_ptr || !flv_header_ptr)
     {

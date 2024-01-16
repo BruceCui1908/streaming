@@ -98,6 +98,11 @@ void http_protocol::on_http_get()
 
 void http_protocol::start_flv_muxing(std::weak_ptr<network::session> session_ptr)
 {
+    if (!header_)
+    {
+        throw std::runtime_error("cannot mux flv with invalid http_flv_header");
+    }
+
     spdlog::info("Client {} is pulling from {}", header_->token(), header_->info());
 
     auto [media_src_ptr, is_found] = media::media_source::find(media::kRTMP_SCHEMA, header_->vhost(), header_->app(), header_->stream_id());
@@ -115,7 +120,7 @@ void http_protocol::start_flv_muxing(std::weak_ptr<network::session> session_ptr
     // lazy initialization
     flv_muxer_ = flv::flv_muxer::create();
     auto rtmp_src_ptr = std::dynamic_pointer_cast<rtmp::rtmp_media_source>(media_src_ptr);
-    flv_muxer_->start_muxing(this, std::move(session_ptr), rtmp_src_ptr, header_, header_->start_pts());
+    flv_muxer_->start_muxing(this, std::move(session_ptr), std::move(rtmp_src_ptr), header_, header_->start_pts());
 }
 
 void http_protocol::send_response(Status status, bool is_close, const char *http_body, size_t body_size, const char *content_type,

@@ -181,7 +181,7 @@ public:
 
     size_t size();
 
-    const network::flat_buffer::ptr &buf();
+    const network::flat_buffer::ptr buf();
 
     bool is_video_pkt() const;
 

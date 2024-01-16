@@ -8,8 +8,12 @@ namespace rtmp {
 /// H.264 track to extract the SPS/PPS. Otherwise, it is split and then passed
 /// to the H.264 track for further processing
 /// @param pkt
-void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt)
+void h264_rtmp_decoder::input_rtmp(rtmp_packet::ptr pkt)
 {
+    if (!pkt)
+    {
+        return;
+    }
 
     // tag header(1 byte) + packet type(1 byte) + composition time(3 bytes)
     const auto &buf = pkt->buf();

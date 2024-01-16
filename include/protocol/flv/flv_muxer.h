@@ -19,8 +19,8 @@ public:
 
     static ptr create();
 
-    void start_muxing(network::socket_sender *, std::weak_ptr<network::session>, rtmp::rtmp_media_source::ptr &,
-        const http::http_flv_header::ptr &, uint32_t start_pts);
+    void start_muxing(network::socket_sender *, std::weak_ptr<network::session>, rtmp::rtmp_media_source::ptr, http::http_flv_header::ptr,
+        uint32_t start_pts);
 
     ~flv_muxer();
 
