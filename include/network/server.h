@@ -20,6 +20,7 @@ class server : public std::enable_shared_from_this<server>
 {
 public:
     virtual ~server() = default;
+
     server(const server &) = delete;
     server &operator=(const server &) = delete;
     server(server &&) = delete;

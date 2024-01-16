@@ -273,7 +273,6 @@ void rtmp_protocol::handle_chunk(rtmp_packet::ptr ptr)
 {
     if (!ptr)
     {
-        spdlog::error("handle_chunk received empty packet");
         return;
     }
 

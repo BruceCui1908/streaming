@@ -167,10 +167,15 @@ std::string session_manager::generate_session_prefix()
     return fmt::format("{}-session_count({})", session_prefix_, ++session_index);
 }
 
-void session_manager::add(const session::ptr &session_ptr)
+void session_manager::add(session::ptr session_ptr)
 {
+    if (!session_ptr)
+    {
+        return;
+    }
+
     std::lock_guard<std::recursive_mutex> lock(mtx_);
-    session_map_.emplace(session_ptr->id(), session_ptr);
+    session_map_.emplace(session_ptr->id(), std::move(session_ptr));
 }
 
 void session_manager::stop(const session::ptr &session_ptr)

@@ -13,7 +13,7 @@ public:
         : rtmp_codec(ptr)
     {}
 
-    void input_rtmp(rtmp_packet::ptr &) override;
+    void input_rtmp(rtmp_packet::ptr) override;
 
 private:
     void split_nal_frame(const network::flat_buffer::ptr &, uint32_t, uint32_t);

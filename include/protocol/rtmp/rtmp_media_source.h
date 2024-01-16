@@ -17,7 +17,7 @@ public:
     using config_frame_map = std::unordered_map<int, rtmp_packet::ptr>;
     using rtmp_dispatcher = media::packet_dispatcher<rtmp_packet::ptr>;
 
-    static ptr create(const media::media_info::ptr &);
+    static ptr create(media::media_info::ptr);
 
     ~rtmp_media_source() = default;
 
@@ -41,7 +41,7 @@ public:
     }
 
 private:
-    rtmp_media_source(const media::media_info::ptr &);
+    rtmp_media_source(media::media_info::ptr);
 
     // timestamps for audio/video
     uint32_t track_stamps_[2] = {0};

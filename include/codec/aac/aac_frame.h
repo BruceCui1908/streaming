@@ -9,7 +9,9 @@ class aac_frame : public codec::frame
 public:
     using ptr = std::shared_ptr<aac_frame>;
 
-    aac_frame(const network::flat_buffer::ptr &, uint64_t dts);
+    /// @param  ptr to underlying data
+    /// @param  dts
+    aac_frame(network::flat_buffer::ptr, uint64_t);
 
     bool is_key_frame() const override
     {

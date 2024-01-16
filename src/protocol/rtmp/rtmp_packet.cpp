@@ -28,7 +28,7 @@ rtmp_packet::rtmp_packet()
     buf_ = std::make_shared<network::flat_buffer>();
 }
 
-const network::flat_buffer::ptr &rtmp_packet::buf()
+const network::flat_buffer::ptr rtmp_packet::buf()
 {
     if (!buf_)
     {

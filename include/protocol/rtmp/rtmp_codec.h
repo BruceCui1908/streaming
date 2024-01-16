@@ -4,6 +4,7 @@
 #include "rtmp_packet.h"
 
 namespace rtmp {
+
 class rtmp_codec
 {
 public:
@@ -13,9 +14,9 @@ public:
 
     virtual ~rtmp_codec() = default;
 
-    virtual void input_rtmp(rtmp_packet::ptr &) = 0;
+    virtual void input_rtmp(rtmp_packet::ptr) = 0;
 
-    const codec::track::ptr &get_track() const
+    const codec::track::ptr get_track() const
     {
         return track_;
     }

@@ -11,19 +11,14 @@ using schema_map = std::unordered_map<std::string /**schema*/, vhost_map>;
 
 static schema_map media_sources_{};
 
-media_source::media_source(const media_info::ptr &ptr)
+media_source::media_source(media_info::ptr ptr)
 {
-    if (!ptr)
+    if (!ptr || !ptr->is_complete())
     {
-        throw std::invalid_argument("Cannot build a media source with empty media info.");
+        throw std::invalid_argument("Cannot build a media source with invalid media info.");
     }
 
-    if (!ptr->is_complete())
-    {
-        throw std::invalid_argument("Cannot build a media source with incomplete media info.");
-    }
-
-    media_info_ = ptr;
+    media_info_ = std::move(ptr);
 }
 
 media_source::~media_source()

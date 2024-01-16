@@ -63,7 +63,7 @@ void rtmp_demuxer::init_audio_track(rtmp_flv_codec_id codecid, int bit_rate)
     audio_track_ = std::make_shared<codec::aac_track>();
     audio_track_->set_bit_rate(bit_rate);
     audio_track_->set_frame_translator(demuxer::get_muxer());
-    audio_rtmp_decoder_ = std::make_shared<aac_rtmp_decoder>(audio_track_);
+    audio_rtmp_decoder_ = std::make_shared<aac_rtmp_decoder>(std::move(audio_track_));
 }
 
 void rtmp_demuxer::init_video_track(rtmp_flv_codec_id codecid, int bit_rate)
@@ -84,8 +84,13 @@ void rtmp_demuxer::init_video_track(rtmp_flv_codec_id codecid, int bit_rate)
     video_rtmp_decoder_ = std::make_shared<h264_rtmp_decoder>(video_track_);
 }
 
-void rtmp_demuxer::input_rtmp(rtmp_packet::ptr &pkt)
+void rtmp_demuxer::input_rtmp(rtmp_packet::ptr pkt)
 {
+    if (!pkt)
+    {
+        return;
+    }
+
     pkt->buf()->capture_snapshot();
 
     if (pkt->msg_type_id == MSG_VIDEO && video_rtmp_decoder_)

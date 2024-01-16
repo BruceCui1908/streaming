@@ -34,7 +34,7 @@ public:
     media_source &operator=(media_source &&) = delete;
 
 protected:
-    media_source(const media_info::ptr &);
+    media_source(media_info::ptr);
 
     void set_registered(bool);
     void regist();

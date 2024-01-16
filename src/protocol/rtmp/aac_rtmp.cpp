@@ -5,10 +5,15 @@
 namespace rtmp {
 
 /// https://zhuanlan.zhihu.com/p/649512028?utm_id=0
-void aac_rtmp_decoder::input_rtmp(rtmp_packet::ptr &pkt)
+void aac_rtmp_decoder::input_rtmp(rtmp_packet::ptr pkt)
 {
+    if (!pkt)
+    {
+        throw std::runtime_error("aac_rtmp_decoder cannot process empty rtmp_packet");
+    }
+
     // aac[0] and aac[1]
-    const auto &buf = pkt->buf();
+    const auto buf = pkt->buf();
     if (!buf)
     {
         throw std::runtime_error("rtmp_packet has empty aac data");
