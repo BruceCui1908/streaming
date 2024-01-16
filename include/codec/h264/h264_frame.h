@@ -12,7 +12,7 @@ public:
     using ptr = std::shared_ptr<h264_frame>;
 
     // https://zhuanlan.zhihu.com/p/622152133  nal_unit_type
-    typedef enum
+    enum class Nal_Type : uint8_t
     {
         NAL_S_P = 1, // coded sliced partition
         NAL_IDR = 5,
@@ -20,7 +20,7 @@ public:
         NAL_SPS = 7,
         NAL_PPS = 8,
         NAL_AUD = 9,
-    } Nal_Type;
+    };
 
     static ptr create()
     {

@@ -40,7 +40,7 @@ void flv_muxer::start_muxing(network::socket_sender *sender, std::weak_ptr<netwo
     auto &metadata = *rtmp_src_ptr->get_metadata();
     rtmp::AMFEncoder encoder;
     encoder << "onMetaData" << metadata;
-    write_flv(sender, Script_Data, encoder.c_str(), encoder.size());
+    write_flv(sender, tag_type::Script_Data, encoder.c_str(), encoder.size());
 
     // 3. send config frame
     rtmp_src_ptr->loop_config_frame([this, sender](const rtmp::rtmp_packet::ptr &ptr) {
@@ -49,7 +49,8 @@ void flv_muxer::start_muxing(network::socket_sender *sender, std::weak_ptr<netwo
             return;
         }
 
-        write_flv(sender, ptr->is_audio_pkt() ? Audio_Data : Video_data, ptr->buf()->data(), ptr->buf()->unread_length(), ptr->time_stamp);
+        write_flv(sender, ptr->is_audio_pkt() ? tag_type::Audio_Data : tag_type::Video_data, ptr->buf()->data(),
+            ptr->buf()->unread_length(), ptr->time_stamp);
     });
 
     auto pkt_dispatcher = rtmp_src_ptr->get_dispatcher();
@@ -58,17 +59,12 @@ void flv_muxer::start_muxing(network::socket_sender *sender, std::weak_ptr<netwo
     auto client_reader_ptr = media::client_reader<rtmp::rtmp_packet::ptr>::create(weak_session, pkt_dispatcher, flv_header_ptr->token());
 
     // 5. set read_cb
-    bool need_filter_ts = start_pts > 0;
     std::weak_ptr<flv_muxer> weak_self = shared_from_this();
 
-    client_reader_ptr->set_read_cb([sender, &need_filter_ts, start_pts, weak_self](const rtmp::rtmp_packet::ptr &pkt) {
-        if (need_filter_ts)
+    client_reader_ptr->set_read_cb([sender, start_pts, weak_self](const rtmp::rtmp_packet::ptr &pkt) {
+        if (start_pts > 0 && pkt->time_stamp < start_pts)
         {
-            if (pkt->time_stamp < start_pts)
-            {
-                return;
-            }
-            need_filter_ts = false;
+            return;
         }
 
         auto strong_self = weak_self.lock();
@@ -121,7 +117,7 @@ network::buffer_raw::ptr flv_muxer::prepare_flv_tag_header(tag_type t, size_t bo
     flv_tag_header *header = reinterpret_cast<flv_tag_header *>(buffer_ptr->data());
     std::memset(header, 0, sizeof(flv_tag_header));
 
-    header->type = t;
+    header->type = magic_enum::enum_integer(t);
     util::set_be24(header->data_size, static_cast<uint32_t>(body_size));
     header->timestamp_ex = (time_stamp >> 24) & 0xFF;
     util::set_be24(header->timestamp, time_stamp & 0xFFFFFF);

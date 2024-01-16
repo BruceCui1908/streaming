@@ -3,7 +3,7 @@
 namespace codec {
 
 aac_frame::aac_frame(const network::flat_buffer::ptr &buf, uint64_t dts)
-    : frame(CodecAAC)
+    : frame(codec::Codec_Type::CodecAAC)
 {
     frame::set_data(buf);
     frame::set_dts(dts);

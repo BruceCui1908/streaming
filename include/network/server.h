@@ -4,13 +4,13 @@
 
 namespace network {
 
-enum class Sock_Type
+enum class Sock_Type : uint8_t
 {
     tcp = 0,
     udp = 1,
 };
 
-enum class Ip_Type
+enum class Ip_Type : uint8_t
 {
     ipv4 = 0,
     ipv6 = 1,

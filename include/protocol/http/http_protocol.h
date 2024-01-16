@@ -35,7 +35,7 @@ private:
 
     void on_http_get();
 
-    void send_response(code, bool is_close, const char *http_body = nullptr, size_t body_size = 0, const char *content_type = nullptr,
+    void send_response(Status, bool is_close, const char *http_body = nullptr, size_t body_size = 0, const char *content_type = nullptr,
         const std::multimap<std::string, std::string> &headers = {});
 
 private:

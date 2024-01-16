@@ -43,7 +43,7 @@ public:
 
 #pragma pack(pop)
 
-enum tag_type
+enum class tag_type : uint8_t
 {
     Script_Data = 18,
     Audio_Data = 8,

@@ -1,10 +1,19 @@
 #include "amf.h"
 
 #include <cstring>
-#include <spdlog/spdlog.h>
 #include <stdexcept>
 
 namespace rtmp {
+
+bool operator==(AMF0Type amf_type, int value)
+{
+    return magic_enum::enum_integer(amf_type) == value;
+}
+
+bool operator!=(AMF0Type amf_type, int value)
+{
+    return magic_enum::enum_integer(amf_type) != value;
+}
 
 /// AMFValue
 AMFValue::AMFValue(AMF0Type type)
@@ -102,7 +111,7 @@ const AMFValue &AMFValue::operator[](const char *key) const
 
 AMFValue::operator bool() const
 {
-    return type_ != AMF_NULL;
+    return type_ != AMF0Type::AMF_NULL;
 }
 
 void AMFValue::set(const std::string &key, const AMFValue &value)
@@ -131,7 +140,7 @@ const AMFValue::mapType &AMFValue::get_map() const
 uint8_t AMFDecoder::pop_front()
 {
     uint8_t x = data()->read_uint8();
-    if (version_ == 0 && x == AMF0Type::AMF_SWITCH_3)
+    if (version_ == 0 && AMF0Type::AMF_SWITCH_3 == x)
     {
         version_ = 3;
     }
@@ -167,7 +176,7 @@ template<>
 std::string AMFDecoder::load<std::string>()
 {
     size_t str_len = 0;
-    if (pop_front() != AMF0Type::AMF_STRING)
+    if (AMF0Type::AMF_STRING != pop_front())
     {
         throw std::runtime_error("Expected a string");
     }
@@ -178,8 +187,7 @@ std::string AMFDecoder::load<std::string>()
 template<>
 double AMFDecoder::load<double>()
 {
-    uint8_t type = pop_front();
-    if (type != AMF0Type::AMF_NUMBER)
+    if (AMF0Type::AMF_NUMBER != pop_front())
     {
         throw std::runtime_error("Expected a number");
     }
@@ -193,8 +201,7 @@ double AMFDecoder::load<double>()
 template<>
 bool AMFDecoder::load<bool>()
 {
-    uint8_t type = pop_front();
-    if (type != AMF0Type::AMF_BOOLEAN)
+    if (AMF0Type::AMF_BOOLEAN != pop_front())
     {
         throw std::runtime_error("Expected a bool");
     }
@@ -209,7 +216,7 @@ std::string AMFDecoder::load_key()
 
 AMFValue AMFDecoder::load_object()
 {
-    if (pop_front() != AMF0Type::AMF_OBJECT)
+    if (AMF0Type::AMF_OBJECT != pop_front())
     {
         throw std::runtime_error("expect an object");
     }
@@ -226,7 +233,7 @@ AMFValue AMFDecoder::load_object()
         object.set(key, value);
     }
 
-    if (pop_front() != AMF0Type::AMF_OBJECT_END)
+    if (AMF0Type::AMF_OBJECT_END != pop_front())
     {
         throw std::runtime_error("expect an object end");
     }
@@ -315,7 +322,7 @@ AMFEncoder &AMFEncoder::operator<<(const AMFValue &obj)
     }
 
     default:
-        spdlog::error("unsupported amf type {}", obj.type());
+        spdlog::error("unsupported amf type {}", magic_enum::enum_name(obj.type()));
         break;
     }
     return *this;

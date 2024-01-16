@@ -2,8 +2,8 @@
 
 #include "meta.h"
 #include "network/flat_buffer.h"
+
 #include <memory>
-#include <stdint.h>
 
 namespace codec {
 

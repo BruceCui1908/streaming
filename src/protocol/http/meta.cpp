@@ -2,21 +2,21 @@
 
 namespace http {
 
-const char *code_to_msg(code status)
+const char *code_to_msg(Status status)
 {
     switch (status)
     {
-    case OK:
+    case Status::OK:
         return "OK";
-    case Bad_Request:
+    case Status::Bad_Request:
         return "Bad Request";
-    case Method_Not_Allowed:
+    case Status::Method_Not_Allowed:
         return "Method Not Allowed";
-    case Unsupported_Media_Type:
+    case Status::Unsupported_Media_Type:
         return "Unsupported Media Type";
-    case Not_Found:
+    case Status::Not_Found:
         return "Not Found";
-    case Internal_Server_Error:
+    case Status::Internal_Server_Error:
         return "Internal Server Error";
     default:
         return "";
