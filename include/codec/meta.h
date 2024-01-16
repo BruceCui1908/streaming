@@ -1,17 +1,22 @@
 #pragma once
 
+#include "util/magic_enum.hpp"
+
 namespace codec {
-typedef enum
+
+enum class Codec_Type
 {
     CodecInvalid = -1,
     CodecH264 = 0,
     CodecAAC = 1,
-} Codec_Type;
+};
 
-typedef enum
+enum class Track_Type
 {
     Audio = 0,
     Video = 1,
-    Max,
-} Track_Type;
+};
+
+constexpr std::size_t kTrackCount = magic_enum::enum_count<Track_Type>();
+
 } // namespace codec

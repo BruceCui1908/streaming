@@ -2,6 +2,8 @@
 
 #include "network/flat_buffer.h"
 
+#include "util/magic_enum.hpp"
+
 #include <map>
 #include <string>
 #include <variant>
@@ -10,7 +12,7 @@
 
 namespace rtmp {
 
-typedef enum
+enum class AMF0Type
 {
     AMF_NUMBER = 0x00,
     AMF_BOOLEAN = 0x01,
@@ -21,7 +23,11 @@ typedef enum
     AMF_OBJECT_END = 0x09,
     AMF_STRICT_ARRAY = 0x0a,
     AMF_SWITCH_3 = 0x11,
-} AMF0Type;
+};
+
+bool operator==(AMF0Type amf_type, int value);
+
+bool operator!=(AMF0Type amf_type, int value);
 
 class AMFValue;
 

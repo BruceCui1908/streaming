@@ -72,7 +72,7 @@ private:
     size_t extract_streaming_info(const std::string &);
 
 private:
-    Method method_{INVALID};
+    Method method_{Method::INVALID};
     std::string app_;
     std::string stream_id_;
     std::string vhost_;

@@ -45,7 +45,7 @@ protected:
 protected:
     media_info::ptr media_info_;
 
-    util::bytes_speed speed_[codec::Track_Type::Max];
+    util::bytes_speed speed_[codec::kTrackCount];
 
 private:
     std::atomic_flag owned_{false};

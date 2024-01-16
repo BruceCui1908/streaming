@@ -165,7 +165,7 @@ std::shared_ptr<void> media_source::get_ownership()
 
 int media_source::get_bytes_speed(codec::Track_Type type)
 {
-    return speed_[type].get_speed();
+    return speed_[magic_enum::enum_integer(type)].get_speed();
 }
 
 } // namespace media

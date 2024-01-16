@@ -422,7 +422,7 @@ void rtmp_protocol::on_amf_createStream(AMFDecoder &dec)
 void rtmp_protocol::on_amf_publish(AMFDecoder &dec)
 {
     // the first byte must be null
-    if (dec.pop_front() != AMF0Type::AMF_NULL)
+    if (AMF0Type::AMF_NULL != dec.pop_front())
     {
         throw std::runtime_error("publish cmd expects NULL");
     }
@@ -648,15 +648,15 @@ void rtmp_protocol::on_process_metadata(AMFDecoder &dec)
                 }
 
                 uint8_t value_type = dec.peek_front();
-                if (value_type == AMF0Type::AMF_NUMBER)
+                if (AMF0Type::AMF_NUMBER == value_type)
                 {
                     value = dec.load<double>();
                 }
-                else if (value_type == AMF0Type::AMF_BOOLEAN)
+                else if (AMF0Type::AMF_BOOLEAN == value_type)
                 {
                     value = dec.load<bool>();
                 }
-                else if (value_type == AMF0Type::AMF_STRING)
+                else if (AMF0Type::AMF_STRING == value_type)
                 {
                     value = dec.load<std::string>();
                 }
@@ -664,7 +664,7 @@ void rtmp_protocol::on_process_metadata(AMFDecoder &dec)
                 meta_data_.emplace(key, value);
             }
 
-            if (dec.pop_front() != AMF0Type::AMF_OBJECT_END)
+            if (AMF0Type::AMF_OBJECT_END != dec.pop_front())
             {
                 throw std::runtime_error("expected an object end");
             }

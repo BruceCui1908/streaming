@@ -2,14 +2,14 @@
 
 namespace http {
 
-enum Method
+enum class Method
 {
     GET,
     POST,
     INVALID,
 };
 
-enum code
+enum class Status
 {
     OK = 200,
     Bad_Request = 400,
@@ -19,7 +19,7 @@ enum code
     Internal_Server_Error = 500,
 };
 
-const char *code_to_msg(code);
+const char *code_to_msg(Status);
 
 static constexpr char k404Body[] = "<html>"
                                    "<head><title>404 Not Found</title></head>"

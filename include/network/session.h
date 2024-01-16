@@ -16,10 +16,10 @@
 
 namespace network {
 
-typedef enum
+enum class err
 {
     operation_cancelled = 125
-} err;
+};
 
 class session_manager;
 using session_manager_ptr = std::shared_ptr<session_manager>;

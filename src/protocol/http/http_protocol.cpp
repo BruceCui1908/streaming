@@ -56,7 +56,7 @@ void http_protocol::on_search_http_handler(const char *data, size_t size)
     catch (const std::exception &ex)
     {
         spdlog::error("failed to parse http header {}, error = {}", data, ex.what());
-        send_response(Bad_Request, true);
+        send_response(Status::Bad_Request, true);
         return;
     }
 
@@ -67,7 +67,7 @@ void http_protocol::on_search_http_handler(const char *data, size_t size)
     if (it == handler_map.end())
     {
         // send 405
-        send_response(Method_Not_Allowed, true);
+        send_response(Status::Method_Not_Allowed, true);
         return;
     }
 
@@ -79,7 +79,7 @@ void http_protocol::on_search_http_handler(const char *data, size_t size)
     catch (const std::exception &ex)
     {
         spdlog::error("Error occurred while executing the HTTP handler., err = {}", ex.what());
-        send_response(Internal_Server_Error, true);
+        send_response(Status::Internal_Server_Error, true);
     }
 }
 
@@ -93,7 +93,7 @@ void http_protocol::on_http_get()
         return;
     }
 
-    send_response(Unsupported_Media_Type, true);
+    send_response(Status::Unsupported_Media_Type, true);
 }
 
 void http_protocol::start_flv_muxing(std::weak_ptr<network::session> session_ptr)
@@ -104,13 +104,13 @@ void http_protocol::start_flv_muxing(std::weak_ptr<network::session> session_ptr
 
     if (!is_found)
     {
-        send_response(Not_Found, true, k404Body, sizeof(k404Body) - 1, "text/html");
+        send_response(Status::Not_Found, true, k404Body, sizeof(k404Body) - 1, "text/html");
         return;
     }
 
     // send flv response header
     std::multimap<std::string, std::string> res_header{{"Cache-Control", "no-store"}};
-    send_response(OK, false, nullptr, 0, "video/x-flv", res_header);
+    send_response(Status::OK, false, nullptr, 0, "video/x-flv", res_header);
 
     // lazy initialization
     flv_muxer_ = flv::flv_muxer::create();
@@ -118,7 +118,7 @@ void http_protocol::start_flv_muxing(std::weak_ptr<network::session> session_ptr
     flv_muxer_->start_muxing(this, std::move(session_ptr), rtmp_src_ptr, header_, header_->start_pts());
 }
 
-void http_protocol::send_response(code status, bool is_close, const char *http_body, size_t body_size, const char *content_type,
+void http_protocol::send_response(Status status, bool is_close, const char *http_body, size_t body_size, const char *content_type,
     const std::multimap<std::string, std::string> &headers)
 {
     // prepare response header
@@ -152,7 +152,7 @@ void http_protocol::send_response(code status, bool is_close, const char *http_b
     std::string res;
     res.reserve(256);
     res += "HTTP/1.1 ";
-    res += std::to_string(status);
+    res += std::to_string(magic_enum::enum_integer(status));
     res += ' ';
     res += code_to_msg(status);
     res += kHttpLineBreak;

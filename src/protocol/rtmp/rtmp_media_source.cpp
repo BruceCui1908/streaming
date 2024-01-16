@@ -64,10 +64,11 @@ void rtmp_media_source::process_av_packet(rtmp_packet::ptr pkt)
 
     // update speed
     bool is_video = pkt->msg_type_id == MSG_VIDEO;
-    speed_[is_video ? codec::Track_Type::Video : codec::Track_Type::Audio] += pkt->size();
+    auto track_index = magic_enum::enum_integer(is_video ? codec::Track_Type::Video : codec::Track_Type::Audio);
+    speed_[track_index] += pkt->size();
 
     // update timestamp for audio/video tracks
-    track_stamps_[is_video ? codec::Track_Type::Video : codec::Track_Type::Audio] = pkt->time_stamp;
+    track_stamps_[track_index] = pkt->time_stamp;
 
     // always update the up-to-date config frame for both video and audio
     if (pkt->is_config_frame())
