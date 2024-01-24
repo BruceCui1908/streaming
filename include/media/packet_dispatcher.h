@@ -177,7 +177,7 @@ public:
         }
     }
 
-    void distribute(const T &pkt)
+    void distribute(const T &pkt, bool is_idr = false)
     {
         // 1. dispatch this single packet to old clients
         {
@@ -200,10 +200,19 @@ public:
         // 2. emplace the packet at the back of the packet list
         {
             std::lock_guard<std::recursive_mutex> lock(pkt_mtx_);
-            while (packet_list_.size() >= max_size_)
+            // clear
+            if (is_idr)
             {
-                packet_list_.pop_front();
+                packet_list_.clear();
             }
+            else
+            {
+                while (packet_list_.size() >= max_size_)
+                {
+                    packet_list_.pop_front();
+                }
+            }
+
             packet_list_.emplace_back(pkt);
         }
 

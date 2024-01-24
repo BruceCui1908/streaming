@@ -94,7 +94,7 @@ void rtmp_media_source::process_av_packet(rtmp_packet::ptr pkt)
         regist();
     }
 
-    dispatcher_->distribute(pkt);
+    dispatcher_->distribute(pkt, pkt->is_video_keyframe());
 }
 
 } // namespace rtmp
